@@ -16,5 +16,6 @@ Parametry są opcjonalne i zawierają domyślne wartości.
 ");
 
 rootCommand.Add(new InitCommand());
+rootCommand.Add(new FeatureCommand());
 
 return await CommandLineParser.Parse(rootCommand, args).InvokeAsync();
