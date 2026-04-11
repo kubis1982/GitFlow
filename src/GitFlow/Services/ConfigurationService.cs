@@ -4,15 +4,8 @@ using System.Diagnostics;
 
 namespace GitFlow.Services;
 
-public class ConfigurationService
+public class ConfigurationService(GitRepositoryService gitService)
 {
-    private readonly GitRepositoryService _gitService;
-
-    public ConfigurationService(GitRepositoryService gitService)
-    {
-        _gitService = gitService;
-    }
-
     public GitFlowConfig? ReadConfig(bool global = false)
     {
         try
@@ -22,7 +15,7 @@ public class ConfigurationService
                 return ReadGlobalConfig();
             }
 
-            var repo = _gitService.GetRepository();
+            var repo = gitService.GetRepository();
             return ReadLocalConfig(repo);
         }
         catch
@@ -104,7 +97,7 @@ public class ConfigurationService
             }
             else
             {
-                var repo = _gitService.GetRepository();
+                var repo = gitService.GetRepository();
                 WriteLocalConfig(repo, config);
             }
         }
@@ -140,7 +133,7 @@ public class ConfigurationService
 
     public GitFlowConfig GetOrCreateConfig(bool global = false)
     {
-        var repo = _gitService.GetRepository();
+        var repo = gitService.GetRepository();
         var local = ReadLocalConfig(repo);
         if (local != null)
             return local;

@@ -1,6 +1,6 @@
 namespace GitFlow.Utilities;
 
-public class ConsoleHelper
+public static class ConsoleHelper
 {
     public static void PrintSuccess(string message)
     {

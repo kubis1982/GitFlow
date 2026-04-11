@@ -3,15 +3,8 @@ using GitFlow.Models;
 
 namespace GitFlow.Services;
 
-public class BranchService
+public class BranchService(GitRepositoryService gitService)
 {
-    private readonly GitRepositoryService _gitService;
-
-    public BranchService(GitRepositoryService gitService)
-    {
-        _gitService = gitService;
-    }
-
     public void CreateBranch(Repository repo, string branchName, string sourceBranchName)
     {
         var sourceBranch = repo.Branches[sourceBranchName];

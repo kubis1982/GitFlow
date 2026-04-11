@@ -2,9 +2,9 @@ using LibGit2Sharp;
 
 namespace GitFlow.Services;
 
-public class GitRepositoryService
+public static class GitRepositoryService
 {
-    public bool IsGitRepository(string path = ".")
+    public static bool IsGitRepository(string path = ".")
     {
         try
         {
@@ -17,7 +17,7 @@ public class GitRepositoryService
         }
     }
 
-    public Repository GetRepository(string path = ".")
+    public static Repository GetRepository(string path = ".")
     {
         try
         {
@@ -29,13 +29,13 @@ public class GitRepositoryService
         }
     }
 
-    public bool IsWorkingDirectoryClean(Repository repo)
+    public static bool IsWorkingDirectoryClean(Repository repo)
     {
         var status = repo.RetrieveStatus();
         return status.IsDirty == false;
     }
 
-    public string GetRepositoryRootPath(string path = ".")
+    public static string GetRepositoryRootPath(string path = ".")
     {
         var repo = GetRepository(path);
         return repo.Info.WorkingDirectory;
