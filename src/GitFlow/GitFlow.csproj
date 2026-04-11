@@ -1,17 +1,35 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <PublishAot>true</PublishAot>
-    <InvariantGlobalization>true</InvariantGlobalization>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<PublishAot>true</PublishAot>
+		<InvariantGlobalization>true</InvariantGlobalization>
 
-  <ItemGroup>
-    <PackageReference Include="LibGit2Sharp" Version="0.31.0" />
-    <PackageReference Include="System.CommandLine" Version="2.0.5" />
-  </ItemGroup>
+		<!-- NuGet Package / DotNet Tool settings -->
+		<PackAsTool>true</PackAsTool>
+		<ToolCommandName>gitflow</ToolCommandName>
+		<PackageId>Kubis1982.GitFlow</PackageId>
+		<PackageTags>gitflow;git;cli;dotnet-tool;git-tools;workflow</PackageTags>
+		<Authors>Kubis1982</Authors>
+		<Description>CLI tool to work with GitFlow workflows</Description>
+		<RepositoryUrl>https://github.com/kubis1982/GitFlow</RepositoryUrl>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageProjectUrl>https://github.com/kubis1982/GitFlow</PackageProjectUrl>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageIcon>icon.png</PackageIcon>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="LibGit2Sharp" Version="0.31.0" />
+		<PackageReference Include="System.CommandLine" Version="2.0.5" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\..\README.md" Pack="true" PackagePath="" />
+		<None Include="..\..\docs\icon.png" Pack="true" PackagePath=""/>
+	</ItemGroup>
 
 </Project>

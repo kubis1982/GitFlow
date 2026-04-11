@@ -38,6 +38,16 @@ jobs:
       - name: Build (optional)
         run: dotnet build --no-restore --configuration Release
 
+      - name: Pack NuGet package
+        shell: pwsh
+        run: |
+          $version = '${{ steps.extract_version.outputs.version }}'
+          Write-Host "Packing NuGet package version $version"
+          dotnet pack src/GitFlow/GitFlow.csproj `
+            --configuration Release `
+            -p:Version=$version `
+            --output ./artifacts/nuget
+
       - name: Publish single-file (Windows x64)
         shell: pwsh
         run: |
@@ -113,3 +123,20 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push NuGet package
+        shell: pwsh
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          if (Test-Path ./artifacts/nuget -PathType Container) {
+            Write-Host "Pushing NuGet package to nuget.org"
+            dotnet nuget push ./artifacts/nuget/*.nupkg `
+              --api-key $env:NUGET_API_KEY `
+              --source https://api.nuget.org/v3/index.json `
+              --skip-duplicate
+          } else {
+            Write-Error "NuGet artifacts folder not found"
+            exit 1
+          }
+

@@ -4,6 +4,25 @@ GitFlow - Git workflow management tool implementing the GitFlow branching model.
 
 ## Installation
 
+### Install as .NET Tool (Recommended)
+
+Install globally using .NET CLI:
+```bash
+dotnet tool install --global Kubis1982.GitFlow
+```
+
+Update to the latest version:
+```bash
+dotnet tool update --global Kubis1982.GitFlow
+```
+
+Uninstall:
+```bash
+dotnet tool uninstall --global Kubis1982.GitFlow
+```
+
+### Build from Source
+
 Build the project:
 ```bash
 dotnet build
