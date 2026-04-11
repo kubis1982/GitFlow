@@ -4,9 +4,9 @@ using System.Diagnostics;
 
 namespace GitFlow.Services;
 
-public class ConfigurationService
+public static class ConfigurationService
 {
-    public GitFlowConfig? ReadConfig(bool global = false)
+    public static GitFlowConfig? ReadConfig(bool global = false)
     {
         try
         {
@@ -24,7 +24,7 @@ public class ConfigurationService
         }
     }
 
-    public GitFlowConfig? ReadLocalConfig(Repository repo)
+    public static GitFlowConfig? ReadLocalConfig(Repository repo)
     {
         try
         {
@@ -53,7 +53,7 @@ public class ConfigurationService
         }
     }
 
-    public GitFlowConfig? ReadGlobalConfig()
+    public static GitFlowConfig? ReadGlobalConfig()
     {
         try
         {
@@ -82,12 +82,12 @@ public class ConfigurationService
         }
     }
 
-    public bool ConfigExists(bool global = false)
+    public static bool ConfigExists(bool global = false)
     {
         return ReadConfig(global) != null;
     }
 
-    public void WriteConfig(GitFlowConfig config, bool global = false)
+    public static void WriteConfig(GitFlowConfig config, bool global = false)
     {
         try
         {
@@ -107,7 +107,7 @@ public class ConfigurationService
         }
     }
 
-    private void WriteLocalConfig(Repository repo, GitFlowConfig config)
+    private static void WriteLocalConfig(Repository repo, GitFlowConfig config)
     {
         repo.Config.Set("gitflow.production", config.ProductionBranch);
         repo.Config.Set("gitflow.development", config.DevelopmentBranch);
@@ -119,7 +119,7 @@ public class ConfigurationService
         repo.Config.Set("gitflow.merge.strategy", config.MergeStrategy);
     }
 
-    private void WriteGlobalConfig(GitFlowConfig config)
+    private static void WriteGlobalConfig(GitFlowConfig config)
     {
         SetGitConfigValue("gitflow.production", config.ProductionBranch, global: true);
         SetGitConfigValue("gitflow.development", config.DevelopmentBranch, global: true);
@@ -131,7 +131,7 @@ public class ConfigurationService
         SetGitConfigValue("gitflow.merge.strategy", config.MergeStrategy, global: true);
     }
 
-    public GitFlowConfig GetOrCreateConfig(bool global = false)
+    public static GitFlowConfig GetOrCreateConfig(bool global = false)
     {
         var repo = GitRepositoryService.GetRepository();
         var local = ReadLocalConfig(repo);
@@ -145,7 +145,7 @@ public class ConfigurationService
         return new GitFlowConfig();
     }
 
-    private string? GetGitConfigValue(string key, bool global = false)
+    private static string? GetGitConfigValue(string key, bool global = false)
     {
         try
         {
@@ -175,7 +175,7 @@ public class ConfigurationService
         }
     }
 
-    private void SetGitConfigValue(string key, string value, bool global = false)
+    private static void SetGitConfigValue(string key, string value, bool global = false)
     {
         var args = global ? $"config --global {key} {value}" : $"config {key} {value}";
         var process = new Process

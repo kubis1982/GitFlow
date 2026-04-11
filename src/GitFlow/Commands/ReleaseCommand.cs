@@ -28,10 +28,8 @@ internal class ReleaseStartCommand : Command
         SetAction(n =>
         {
             var name = n.GetValue(nameArgument);
-            var configService = new ConfigurationService();
-
             var repo = GitRepositoryService.GetRepository();
-            var config = configService.GetOrCreateConfig();
+            var config = ConfigurationService.GetOrCreateConfig();
             var branchName = config.ReleasePrefix + name;
 
             BranchService.CreateBranch(repo, branchName, config.DevelopmentBranch);
@@ -50,10 +48,8 @@ internal class ReleasePublishCommand : Command
         SetAction(n =>
         {
             var name = n.GetValue(nameArgument);
-            var configService = new ConfigurationService();
-
             var repo = GitRepositoryService.GetRepository();
-            var config = configService.GetOrCreateConfig();
+            var config = ConfigurationService.GetOrCreateConfig();
             var branchName = config.ReleasePrefix + name;
 
             BranchService.PublishBranch(repo, branchName);
@@ -72,10 +68,8 @@ internal class ReleaseCheckoutCommand : Command
         SetAction(n =>
         {
             var name = n.GetValue(nameArgument);
-            var configService = new ConfigurationService();
-
             var repo = GitRepositoryService.GetRepository();
-            var config = configService.GetOrCreateConfig();
+            var config = ConfigurationService.GetOrCreateConfig();
             var branchName = config.ReleasePrefix + name;
 
             BranchService.CheckoutBranch(repo, branchName);
@@ -94,10 +88,8 @@ internal class ReleaseFinishCommand : Command
         SetAction(n =>
         {
             var name = n.GetValue(nameArgument);
-            var configService = new ConfigurationService();
-
             var repo = GitRepositoryService.GetRepository();
-            var config = configService.GetOrCreateConfig();
+            var config = ConfigurationService.GetOrCreateConfig();
             var branchName = config.ReleasePrefix + name;
 
             MergeService.FinishRelease(repo, branchName, config);
@@ -115,10 +107,8 @@ internal class ReleaseDeleteCommand : Command
         SetAction(n =>
         {
             var name = n.GetValue(nameArgument);
-            var configService = new ConfigurationService();
-
             var repo = GitRepositoryService.GetRepository();
-            var config = configService.GetOrCreateConfig();
+            var config = ConfigurationService.GetOrCreateConfig();
             var branchName = config.ReleasePrefix + name;
 
             BranchService.DeleteBranch(repo, branchName);
@@ -137,10 +127,8 @@ internal class ReleaseUpdateCommand : Command
         SetAction(n =>
         {
             var name = n.GetValue(nameArgument);
-            var configService = new ConfigurationService();
-
             var repo = GitRepositoryService.GetRepository();
-            var config = configService.GetOrCreateConfig();
+            var config = ConfigurationService.GetOrCreateConfig();
             var branchName = config.ReleasePrefix + name;
 
             BranchService.UpdateBranch(repo, branchName, config.DevelopmentBranch);
@@ -155,10 +143,8 @@ internal class ReleaseListCommand : Command
     {
         SetAction(n =>
         {
-            var configService = new ConfigurationService();
-
             var repo = GitRepositoryService.GetRepository();
-            var config = configService.GetOrCreateConfig();
+            var config = ConfigurationService.GetOrCreateConfig();
             var branches = BranchService.ListBranches(repo, config.ReleasePrefix);
 
             if (branches.Count == 0)

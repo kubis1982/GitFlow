@@ -28,10 +28,8 @@ internal class HotfixStartCommand : Command
         SetAction(n =>
         {
             var name = n.GetValue(nameArgument);
-            var configService = new ConfigurationService();
-
             var repo = GitRepositoryService.GetRepository();
-            var config = configService.GetOrCreateConfig();
+            var config = ConfigurationService.GetOrCreateConfig();
             var branchName = config.HotfixPrefix + name;
 
             BranchService.CreateBranch(repo, branchName, config.ProductionBranch);
@@ -50,10 +48,8 @@ internal class HotfixPublishCommand : Command
         SetAction(n =>
         {
             var name = n.GetValue(nameArgument);
-            var configService = new ConfigurationService();
-
             var repo = GitRepositoryService.GetRepository();
-            var config = configService.GetOrCreateConfig();
+            var config = ConfigurationService.GetOrCreateConfig();
             var branchName = config.HotfixPrefix + name;
 
             BranchService.PublishBranch(repo, branchName);
@@ -72,10 +68,8 @@ internal class HotfixCheckoutCommand : Command
         SetAction(n =>
         {
             var name = n.GetValue(nameArgument);
-            var configService = new ConfigurationService();
-
             var repo = GitRepositoryService.GetRepository();
-            var config = configService.GetOrCreateConfig();
+            var config = ConfigurationService.GetOrCreateConfig();
             var branchName = config.HotfixPrefix + name;
 
             BranchService.CheckoutBranch(repo, branchName);
@@ -94,10 +88,8 @@ internal class HotfixFinishCommand : Command
         SetAction(n =>
         {
             var name = n.GetValue(nameArgument);
-            var configService = new ConfigurationService();
-
             var repo = GitRepositoryService.GetRepository();
-            var config = configService.GetOrCreateConfig();
+            var config = ConfigurationService.GetOrCreateConfig();
             var branchName = config.HotfixPrefix + name;
 
             MergeService.FinishHotfix(repo, branchName, config);
@@ -115,10 +107,8 @@ internal class HotfixDeleteCommand : Command
         SetAction(n =>
         {
             var name = n.GetValue(nameArgument);
-            var configService = new ConfigurationService();
-
             var repo = GitRepositoryService.GetRepository();
-            var config = configService.GetOrCreateConfig();
+            var config = ConfigurationService.GetOrCreateConfig();
             var branchName = config.HotfixPrefix + name;
 
             BranchService.DeleteBranch(repo, branchName);
@@ -137,10 +127,8 @@ internal class HotfixUpdateCommand : Command
         SetAction(n =>
         {
             var name = n.GetValue(nameArgument);
-            var configService = new ConfigurationService();
-
             var repo = GitRepositoryService.GetRepository();
-            var config = configService.GetOrCreateConfig();
+            var config = ConfigurationService.GetOrCreateConfig();
             var branchName = config.HotfixPrefix + name;
 
             BranchService.UpdateBranch(repo, branchName, config.ProductionBranch);
@@ -155,10 +143,8 @@ internal class HotfixListCommand : Command
     {
         SetAction(n =>
         {
-            var configService = new ConfigurationService();
-
             var repo = GitRepositoryService.GetRepository();
-            var config = configService.GetOrCreateConfig();
+            var config = ConfigurationService.GetOrCreateConfig();
             var branches = BranchService.ListBranches(repo, config.HotfixPrefix);
 
             if (branches.Count == 0)

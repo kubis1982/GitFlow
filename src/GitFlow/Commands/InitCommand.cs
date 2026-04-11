@@ -20,64 +20,8 @@ internal class InitCommand : Command
             Description = "Overwrite existing configuration"
         };
 
-        var productionOption = new Option<string>("--production")
-        {
-            Description = "Production branch name",
-            DefaultValueFactory = n => "main"
-        };
-
-        var developmentOption = new Option<string>("--development")
-        {
-            Description = "Development branch name",
-            DefaultValueFactory = n => "develop"
-        };
-
-        var featurePrefixOption = new Option<string>("--feature-prefix")
-        {
-            Description = "Feature branch prefix",
-            DefaultValueFactory = n => "feature/"
-        };
-
-        var releasePrefixOption = new Option<string>("--release-prefix")
-        {
-            Description = "Release branch prefix",
-            DefaultValueFactory = n => "release/"
-        };
-
-        var hotfixPrefixOption = new Option<string>("--hotfix-prefix")
-        {
-            Description = "Hotfix branch prefix",
-            DefaultValueFactory = n => "hotfix/"
-        };
-
-        var bugfixPrefixOption = new Option<string>("--bugfix-prefix")
-        {
-            Description = "Bugfix branch prefix",
-            DefaultValueFactory = n => "bugfix/"
-        };
-
-        var versionPrefixOption = new Option<string>("--version-prefix")
-        {
-            Description = "Version tag prefix",
-            DefaultValueFactory = n => "v"
-        };
-
-        var mergeStrategyOption = new Option<string>("--merge-strategy")
-        {
-            Description = "Merge strategy (--no-ff, squash, ff-only)",
-            DefaultValueFactory = n => "--no-ff"
-        };
-
         Options.Add(globalOption);
         Options.Add(forceOption);
-        Options.Add(productionOption);
-        Options.Add(developmentOption);
-        Options.Add(featurePrefixOption);
-        Options.Add(releasePrefixOption);
-        Options.Add(hotfixPrefixOption);
-        Options.Add(bugfixPrefixOption);
-        Options.Add(versionPrefixOption);
-        Options.Add(mergeStrategyOption);
 
         SetAction(n =>
         {
@@ -85,16 +29,6 @@ internal class InitCommand : Command
             {
                 var global = n.GetValue(globalOption);
                 var force = n.GetValue(forceOption);
-                var production = n.GetRequiredValue(productionOption);
-                var development = n.GetRequiredValue(developmentOption);
-                var featurePrefix = n.GetRequiredValue(featurePrefixOption);
-                var releasePrefix = n.GetRequiredValue(releasePrefixOption);
-                var hotfixPrefix = n.GetRequiredValue(hotfixPrefixOption);
-                var bugfixPrefix = n.GetRequiredValue(bugfixPrefixOption);
-                var versionPrefix = n.GetRequiredValue(versionPrefixOption);
-                var mergeStrategy = n.GetRequiredValue(mergeStrategyOption);
-
-                var configService = new ConfigurationService();
 
                 if (!GitRepositoryService.IsGitRepository())
                 {
@@ -104,11 +38,71 @@ internal class InitCommand : Command
 
                 var repo = GitRepositoryService.GetRepository();
 
-                if (configService.ConfigExists(global) && !force)
+                if (ConfigurationService.ConfigExists(global) && !force)
                 {
                     ConsoleHelper.PrintError("GitFlow is already initialized. Use -f/--force to override.");
                     return;
                 }
+
+                Console.WriteLine();
+                ConsoleHelper.PrintInfo("GitFlow Configuration");
+                Console.WriteLine();
+
+                // Production branch
+                Console.Write("Production branch [main]: ");
+                var production = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(production))
+                    production = "main";
+
+                // Development branch
+                Console.Write("Development branch [develop]: ");
+                var development = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(development))
+                    development = "develop";
+
+                Console.WriteLine();
+                ConsoleHelper.PrintInfo("Branch Prefixes");
+                Console.WriteLine();
+
+                // Feature prefix
+                Console.Write("Feature branch prefix [feature/]: ");
+                var featurePrefix = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(featurePrefix))
+                    featurePrefix = "feature/";
+
+                // Release prefix
+                Console.Write("Release branch prefix [release/]: ");
+                var releasePrefix = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(releasePrefix))
+                    releasePrefix = "release/";
+
+                // Hotfix prefix
+                Console.Write("Hotfix branch prefix [hotfix/]: ");
+                var hotfixPrefix = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(hotfixPrefix))
+                    hotfixPrefix = "hotfix/";
+
+                // Bugfix prefix
+                Console.Write("Bugfix branch prefix [bugfix/]: ");
+                var bugfixPrefix = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(bugfixPrefix))
+                    bugfixPrefix = "bugfix/";
+
+                // Version prefix
+                Console.Write("Version tag prefix [v]: ");
+                var versionPrefix = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(versionPrefix))
+                    versionPrefix = "v";
+
+                Console.WriteLine();
+                ConsoleHelper.PrintInfo("Merge Strategy");
+                Console.WriteLine();
+
+                // Merge strategy
+                Console.Write("Merge strategy [--no-ff]: ");
+                var mergeStrategy = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(mergeStrategy))
+                    mergeStrategy = "--no-ff";
 
                 var config = new GitFlowConfig
                 {
@@ -123,8 +117,9 @@ internal class InitCommand : Command
                     IsGlobal = global
                 };
 
-                configService.WriteConfig(config, global);
+                ConfigurationService.WriteConfig(config, global);
 
+                Console.WriteLine();
                 ConsoleHelper.PrintSuccess($"GitFlow initialized ({(global ? "global" : "local")} config)");
                 Console.WriteLine($"  Production branch: {production}");
                 Console.WriteLine($"  Development branch: {development}");
