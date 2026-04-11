@@ -129,14 +129,16 @@ jobs:
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
-          if (Test-Path ./artifacts/nuget -PathType Container) {
-            Write-Host "Pushing NuGet package to nuget.org"
-            dotnet nuget push ./artifacts/nuget/*.nupkg `
+          $version = '${{ steps.extract_version.outputs.version }}'
+          $packageFile = "./artifacts/nuget/GitFlow.$version.nupkg"
+          if (Test-Path $packageFile -PathType Leaf) {
+            Write-Host "Pushing NuGet package to nuget.org: $packageFile"
+            dotnet nuget push $packageFile `
               --api-key $env:NUGET_API_KEY `
               --source https://api.nuget.org/v3/index.json `
               --skip-duplicate
           } else {
-            Write-Error "NuGet artifacts folder not found"
+            Write-Error "NuGet package file not found: $packageFile"
             exit 1
           }
 
