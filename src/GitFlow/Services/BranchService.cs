@@ -3,9 +3,9 @@ using GitFlow.Models;
 
 namespace GitFlow.Services;
 
-public class BranchService(GitRepositoryService gitService)
+public static class BranchService
 {
-    public void CreateBranch(Repository repo, string branchName, string sourceBranchName)
+    public static void CreateBranch(Repository repo, string branchName, string sourceBranchName)
     {
         var sourceBranch = repo.Branches[sourceBranchName];
         if (sourceBranch == null)
@@ -15,7 +15,7 @@ public class BranchService(GitRepositoryService gitService)
         LibGit2Sharp.Commands.Checkout(repo, newBranch);
     }
 
-    public void PublishBranch(Repository repo, string branchName)
+    public static void PublishBranch(Repository repo, string branchName)
     {
         var branch = repo.Branches[branchName];
         if (branch == null)
@@ -28,7 +28,7 @@ public class BranchService(GitRepositoryService gitService)
         repo.Network.Push(remote, $"refs/heads/{branchName}:refs/heads/{branchName}");
     }
 
-    public void CheckoutBranch(Repository repo, string branchName)
+    public static void CheckoutBranch(Repository repo, string branchName)
     {
         var branch = repo.Branches[branchName];
         if (branch == null)
@@ -47,7 +47,7 @@ public class BranchService(GitRepositoryService gitService)
         }
     }
 
-    public void DeleteBranch(Repository repo, string branchName, bool deleteRemote = true)
+    public static void DeleteBranch(Repository repo, string branchName, bool deleteRemote = true)
     {
         var branch = repo.Branches[branchName];
         if (branch == null)
@@ -72,7 +72,7 @@ public class BranchService(GitRepositoryService gitService)
         }
     }
 
-    public void UpdateBranch(Repository repo, string branchName, string parentBranchName)
+    public static void UpdateBranch(Repository repo, string branchName, string parentBranchName)
     {
         var branch = repo.Branches[branchName];
         var parentBranch = repo.Branches[parentBranchName];
@@ -93,7 +93,7 @@ public class BranchService(GitRepositoryService gitService)
         }
     }
 
-    public List<BranchInfo> ListBranches(Repository repo, string prefix)
+    public static List<BranchInfo> ListBranches(Repository repo, string prefix)
     {
         var branches = new List<BranchInfo>();
 
@@ -115,12 +115,12 @@ public class BranchService(GitRepositoryService gitService)
         return branches;
     }
 
-    public bool BranchExists(Repository repo, string branchName)
+    public static bool BranchExists(Repository repo, string branchName)
     {
         return repo.Branches[branchName] != null;
     }
 
-    public bool LocalAndRemoteInSync(Repository repo, string branchName)
+    public static bool LocalAndRemoteInSync(Repository repo, string branchName)
     {
         var branch = repo.Branches[branchName];
         if (branch == null)
@@ -132,7 +132,7 @@ public class BranchService(GitRepositoryService gitService)
         return branch.Tip.Sha == branch.TrackedBranch.Tip.Sha;
     }
 
-    public bool BranchHasUnmergedCommits(Repository repo, string branchName, string targetBranchName)
+    public static bool BranchHasUnmergedCommits(Repository repo, string branchName, string targetBranchName)
     {
         var branch = repo.Branches[branchName];
         var targetBranch = repo.Branches[targetBranchName];

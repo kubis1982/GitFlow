@@ -31,27 +31,25 @@ internal class BugfixStartCommand : Command
             try
             {
                 var name = n.GetValue(nameArgument);
-                var gitService = new GitRepositoryService();
-                var configService = new ConfigurationService(gitService);
-                var branchService = new BranchService(gitService);
+                var configService = new ConfigurationService();
 
-                if (!gitService.IsGitRepository())
+                if (!GitRepositoryService.IsGitRepository())
                 {
                     ConsoleHelper.PrintError("Not a git repository");
                     return;
                 }
 
-                var repo = gitService.GetRepository();
+                var repo = GitRepositoryService.GetRepository();
                 var config = configService.GetOrCreateConfig();
                 var branchName = config.BugfixPrefix + name;
 
-                if (branchService.BranchExists(repo, branchName))
+                if (BranchService.BranchExists(repo, branchName))
                 {
                     ConsoleHelper.PrintError($"Bugfix branch '{branchName}' already exists");
                     return;
                 }
 
-                branchService.CreateBranch(repo, branchName, config.DevelopmentBranch);
+                BranchService.CreateBranch(repo, branchName, config.DevelopmentBranch);
                 ConsoleHelper.PrintSuccess($"Bugfix branch '{branchName}' created");
             }
             catch (Exception ex)
@@ -74,21 +72,19 @@ internal class BugfixPublishCommand : Command
             try
             {
                 var name = n.GetValue(nameArgument);
-                var gitService = new GitRepositoryService();
-                var configService = new ConfigurationService(gitService);
-                var branchService = new BranchService(gitService);
+                var configService = new ConfigurationService();
 
-                if (!gitService.IsGitRepository())
+                if (!GitRepositoryService.IsGitRepository())
                 {
                     ConsoleHelper.PrintError("Not a git repository");
                     return;
                 }
 
-                var repo = gitService.GetRepository();
+                var repo = GitRepositoryService.GetRepository();
                 var config = configService.GetOrCreateConfig();
                 var branchName = config.BugfixPrefix + name;
 
-                branchService.PublishBranch(repo, branchName);
+                BranchService.PublishBranch(repo, branchName);
                 ConsoleHelper.PrintSuccess($"Bugfix branch '{branchName}' published");
             }
             catch (Exception ex)
@@ -111,21 +107,19 @@ internal class BugfixCheckoutCommand : Command
             try
             {
                 var name = n.GetValue(nameArgument);
-                var gitService = new GitRepositoryService();
-                var configService = new ConfigurationService(gitService);
-                var branchService = new BranchService(gitService);
+                var configService = new ConfigurationService();
 
-                if (!gitService.IsGitRepository())
+                if (!GitRepositoryService.IsGitRepository())
                 {
                     ConsoleHelper.PrintError("Not a git repository");
                     return;
                 }
 
-                var repo = gitService.GetRepository();
+                var repo = GitRepositoryService.GetRepository();
                 var config = configService.GetOrCreateConfig();
                 var branchName = config.BugfixPrefix + name;
 
-                branchService.CheckoutBranch(repo, branchName);
+                BranchService.CheckoutBranch(repo, branchName);
                 ConsoleHelper.PrintSuccess($"Checked out to '{branchName}'");
             }
             catch (Exception ex)
@@ -148,17 +142,15 @@ internal class BugfixFinishCommand : Command
             try
             {
                 var name = n.GetValue(nameArgument);
-                var gitService = new GitRepositoryService();
-                var configService = new ConfigurationService(gitService);
-                var branchService = new BranchService(gitService);
+                var configService = new ConfigurationService();
 
-                if (!gitService.IsGitRepository())
+                if (!GitRepositoryService.IsGitRepository())
                 {
                     ConsoleHelper.PrintError("Not a git repository");
                     return;
                 }
 
-                var repo = gitService.GetRepository();
+                var repo = GitRepositoryService.GetRepository();
                 var config = configService.GetOrCreateConfig();
                 var branchName = config.BugfixPrefix + name;
 
@@ -174,7 +166,7 @@ internal class BugfixFinishCommand : Command
                     return;
                 }
 
-                branchService.DeleteBranch(repo, branchName);
+                BranchService.DeleteBranch(repo, branchName);
                 ConsoleHelper.PrintSuccess($"Bugfix branch '{branchName}' merged and deleted");
             }
             catch (Exception ex)
@@ -197,21 +189,19 @@ internal class BugfixDeleteCommand : Command
             try
             {
                 var name = n.GetValue(nameArgument);
-                var gitService = new GitRepositoryService();
-                var configService = new ConfigurationService(gitService);
-                var branchService = new BranchService(gitService);
+                var configService = new ConfigurationService();
 
-                if (!gitService.IsGitRepository())
+                if (!GitRepositoryService.IsGitRepository())
                 {
                     ConsoleHelper.PrintError("Not a git repository");
                     return;
                 }
 
-                var repo = gitService.GetRepository();
+                var repo = GitRepositoryService.GetRepository();
                 var config = configService.GetOrCreateConfig();
                 var branchName = config.BugfixPrefix + name;
 
-                branchService.DeleteBranch(repo, branchName);
+                BranchService.DeleteBranch(repo, branchName);
                 ConsoleHelper.PrintSuccess($"Bugfix branch '{branchName}' deleted");
             }
             catch (Exception ex)
@@ -234,21 +224,19 @@ internal class BugfixUpdateCommand : Command
             try
             {
                 var name = n.GetValue(nameArgument);
-                var gitService = new GitRepositoryService();
-                var configService = new ConfigurationService(gitService);
-                var branchService = new BranchService(gitService);
+                var configService = new ConfigurationService();
 
-                if (!gitService.IsGitRepository())
+                if (!GitRepositoryService.IsGitRepository())
                 {
                     ConsoleHelper.PrintError("Not a git repository");
                     return;
                 }
 
-                var repo = gitService.GetRepository();
+                var repo = GitRepositoryService.GetRepository();
                 var config = configService.GetOrCreateConfig();
                 var branchName = config.BugfixPrefix + name;
 
-                branchService.UpdateBranch(repo, branchName, config.DevelopmentBranch);
+                BranchService.UpdateBranch(repo, branchName, config.DevelopmentBranch);
                 ConsoleHelper.PrintSuccess($"Bugfix branch '{branchName}' updated");
             }
             catch (Exception ex)
@@ -267,19 +255,17 @@ internal class BugfixListCommand : Command
         {
             try
             {
-                var gitService = new GitRepositoryService();
-                var configService = new ConfigurationService(gitService);
-                var branchService = new BranchService(gitService);
+                var configService = new ConfigurationService();
 
-                if (!gitService.IsGitRepository())
+                if (!GitRepositoryService.IsGitRepository())
                 {
                     ConsoleHelper.PrintError("Not a git repository");
                     return;
                 }
 
-                var repo = gitService.GetRepository();
+                var repo = GitRepositoryService.GetRepository();
                 var config = configService.GetOrCreateConfig();
-                var branches = branchService.ListBranches(repo, config.BugfixPrefix);
+                var branches = BranchService.ListBranches(repo, config.BugfixPrefix);
 
                 if (branches.Count == 0)
                 {

@@ -4,9 +4,9 @@ using GitFlow.Utilities;
 
 namespace GitFlow.Services;
 
-public class MergeService(GitRepositoryService gitService, BranchService branchService)
+public static class MergeService
 {
-    public void FinishRelease(Repository repo, string branchName, GitFlowConfig config)
+    public static void FinishRelease(Repository repo, string branchName, GitFlowConfig config)
     {
         var releaseBranch = repo.Branches[branchName];
         if (releaseBranch == null)
@@ -56,12 +56,12 @@ public class MergeService(GitRepositoryService gitService, BranchService branchS
 
         // 5. Delete release branch
         ConsoleHelper.PrintInfo("Deleting release branch...");
-        branchService.DeleteBranch(repo, branchName);
+        BranchService.DeleteBranch(repo, branchName);
 
         ConsoleHelper.PrintSuccess($"Release '{version}' finished successfully");
     }
 
-    public void FinishHotfix(Repository repo, string branchName, GitFlowConfig config)
+    public static void FinishHotfix(Repository repo, string branchName, GitFlowConfig config)
     {
         var hotfixBranch = repo.Branches[branchName];
         if (hotfixBranch == null)
@@ -111,7 +111,7 @@ public class MergeService(GitRepositoryService gitService, BranchService branchS
 
         // 5. Delete hotfix branch
         ConsoleHelper.PrintInfo("Deleting hotfix branch...");
-        branchService.DeleteBranch(repo, branchName);
+        BranchService.DeleteBranch(repo, branchName);
 
         ConsoleHelper.PrintSuccess($"Hotfix '{version}' finished successfully");
     }

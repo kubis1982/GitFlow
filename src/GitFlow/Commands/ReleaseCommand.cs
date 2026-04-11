@@ -28,15 +28,13 @@ internal class ReleaseStartCommand : Command
         SetAction(n =>
         {
             var name = n.GetValue(nameArgument);
-            var gitService = new GitRepositoryService();
-            var configService = new ConfigurationService(gitService);
-            var branchService = new BranchService(gitService);
+            var configService = new ConfigurationService();
 
-            var repo = gitService.GetRepository();
+            var repo = GitRepositoryService.GetRepository();
             var config = configService.GetOrCreateConfig();
             var branchName = config.ReleasePrefix + name;
 
-            branchService.CreateBranch(repo, branchName, config.DevelopmentBranch);
+            BranchService.CreateBranch(repo, branchName, config.DevelopmentBranch);
             ConsoleHelper.PrintSuccess($"Release branch '{branchName}' created");
         });
     }
@@ -52,15 +50,13 @@ internal class ReleasePublishCommand : Command
         SetAction(n =>
         {
             var name = n.GetValue(nameArgument);
-            var gitService = new GitRepositoryService();
-            var configService = new ConfigurationService(gitService);
-            var branchService = new BranchService(gitService);
+            var configService = new ConfigurationService();
 
-            var repo = gitService.GetRepository();
+            var repo = GitRepositoryService.GetRepository();
             var config = configService.GetOrCreateConfig();
             var branchName = config.ReleasePrefix + name;
 
-            branchService.PublishBranch(repo, branchName);
+            BranchService.PublishBranch(repo, branchName);
             ConsoleHelper.PrintSuccess($"Release branch '{branchName}' published");
         });
     }
@@ -76,15 +72,13 @@ internal class ReleaseCheckoutCommand : Command
         SetAction(n =>
         {
             var name = n.GetValue(nameArgument);
-            var gitService = new GitRepositoryService();
-            var configService = new ConfigurationService(gitService);
-            var branchService = new BranchService(gitService);
+            var configService = new ConfigurationService();
 
-            var repo = gitService.GetRepository();
+            var repo = GitRepositoryService.GetRepository();
             var config = configService.GetOrCreateConfig();
             var branchName = config.ReleasePrefix + name;
 
-            branchService.CheckoutBranch(repo, branchName);
+            BranchService.CheckoutBranch(repo, branchName);
             ConsoleHelper.PrintSuccess($"Checked out to '{branchName}'");
         });
     }
@@ -100,16 +94,13 @@ internal class ReleaseFinishCommand : Command
         SetAction(n =>
         {
             var name = n.GetValue(nameArgument);
-            var gitService = new GitRepositoryService();
-            var configService = new ConfigurationService(gitService);
-            var branchService = new BranchService(gitService);
-            var mergeService = new MergeService(gitService, branchService);
+            var configService = new ConfigurationService();
 
-            var repo = gitService.GetRepository();
+            var repo = GitRepositoryService.GetRepository();
             var config = configService.GetOrCreateConfig();
             var branchName = config.ReleasePrefix + name;
 
-            mergeService.FinishRelease(repo, branchName, config);
+            MergeService.FinishRelease(repo, branchName, config);
         });
     }
 }
@@ -124,15 +115,13 @@ internal class ReleaseDeleteCommand : Command
         SetAction(n =>
         {
             var name = n.GetValue(nameArgument);
-            var gitService = new GitRepositoryService();
-            var configService = new ConfigurationService(gitService);
-            var branchService = new BranchService(gitService);
+            var configService = new ConfigurationService();
 
-            var repo = gitService.GetRepository();
+            var repo = GitRepositoryService.GetRepository();
             var config = configService.GetOrCreateConfig();
             var branchName = config.ReleasePrefix + name;
 
-            branchService.DeleteBranch(repo, branchName);
+            BranchService.DeleteBranch(repo, branchName);
             ConsoleHelper.PrintSuccess($"Release branch '{branchName}' deleted");
         });
     }
@@ -148,15 +137,13 @@ internal class ReleaseUpdateCommand : Command
         SetAction(n =>
         {
             var name = n.GetValue(nameArgument);
-            var gitService = new GitRepositoryService();
-            var configService = new ConfigurationService(gitService);
-            var branchService = new BranchService(gitService);
+            var configService = new ConfigurationService();
 
-            var repo = gitService.GetRepository();
+            var repo = GitRepositoryService.GetRepository();
             var config = configService.GetOrCreateConfig();
             var branchName = config.ReleasePrefix + name;
 
-            branchService.UpdateBranch(repo, branchName, config.DevelopmentBranch);
+            BranchService.UpdateBranch(repo, branchName, config.DevelopmentBranch);
             ConsoleHelper.PrintSuccess($"Release branch '{branchName}' updated");
         });
     }
@@ -168,13 +155,11 @@ internal class ReleaseListCommand : Command
     {
         SetAction(n =>
         {
-            var gitService = new GitRepositoryService();
-            var configService = new ConfigurationService(gitService);
-            var branchService = new BranchService(gitService);
+            var configService = new ConfigurationService();
 
-            var repo = gitService.GetRepository();
+            var repo = GitRepositoryService.GetRepository();
             var config = configService.GetOrCreateConfig();
-            var branches = branchService.ListBranches(repo, config.ReleasePrefix);
+            var branches = BranchService.ListBranches(repo, config.ReleasePrefix);
 
             if (branches.Count == 0)
             {

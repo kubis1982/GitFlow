@@ -94,16 +94,15 @@ internal class InitCommand : Command
                 var versionPrefix = n.GetRequiredValue(versionPrefixOption);
                 var mergeStrategy = n.GetRequiredValue(mergeStrategyOption);
 
-                var gitService = new GitRepositoryService();
-                var configService = new ConfigurationService(gitService);
+                var configService = new ConfigurationService();
 
-                if (!gitService.IsGitRepository())
+                if (!GitRepositoryService.IsGitRepository())
                 {
                     ConsoleHelper.PrintError("Not a git repository. Initialize git first with 'git init'");
                     return;
                 }
 
-                var repo = gitService.GetRepository();
+                var repo = GitRepositoryService.GetRepository();
 
                 if (configService.ConfigExists(global) && !force)
                 {

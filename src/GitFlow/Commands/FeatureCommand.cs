@@ -31,28 +31,26 @@ internal class FeatureStartCommand : Command
             try
             {
                 var name = n.GetValue(nameArgument);
-                var gitService = new GitRepositoryService();
-                var configService = new ConfigurationService(gitService);
-                var branchService = new BranchService(gitService);
+                var configService = new ConfigurationService();
 
-                if (!gitService.IsGitRepository())
+                if (!GitRepositoryService.IsGitRepository())
                 {
                     ConsoleHelper.PrintError("Not a git repository");
                     return;
                 }
 
-                var repo = gitService.GetRepository();
+                var repo = GitRepositoryService.GetRepository();
                 var config = configService.GetOrCreateConfig();
 
                 var branchName = config.FeaturePrefix + name;
 
-                if (branchService.BranchExists(repo, branchName))
+                if (BranchService.BranchExists(repo, branchName))
                 {
                     ConsoleHelper.PrintError($"Feature branch '{branchName}' already exists");
                     return;
                 }
 
-                branchService.CreateBranch(repo, branchName, config.DevelopmentBranch);
+                BranchService.CreateBranch(repo, branchName, config.DevelopmentBranch);
                 ConsoleHelper.PrintSuccess($"Feature branch '{branchName}' created");
             }
             catch (Exception ex)
@@ -75,21 +73,19 @@ internal class FeaturePublishCommand : Command
             try
             {
                 var name = n.GetValue(nameArgument);
-                var gitService = new GitRepositoryService();
-                var configService = new ConfigurationService(gitService);
-                var branchService = new BranchService(gitService);
+                var configService = new ConfigurationService();
 
-                if (!gitService.IsGitRepository())
+                if (!GitRepositoryService.IsGitRepository())
                 {
                     ConsoleHelper.PrintError("Not a git repository");
                     return;
                 }
 
-                var repo = gitService.GetRepository();
+                var repo = GitRepositoryService.GetRepository();
                 var config = configService.GetOrCreateConfig();
                 var branchName = config.FeaturePrefix + name;
 
-                branchService.PublishBranch(repo, branchName);
+                BranchService.PublishBranch(repo, branchName);
                 ConsoleHelper.PrintSuccess($"Feature branch '{branchName}' published");
             }
             catch (Exception ex)
@@ -112,21 +108,19 @@ internal class FeatureCheckoutCommand : Command
             try
             {
                 var name = n.GetValue(nameArgument);
-                var gitService = new GitRepositoryService();
-                var configService = new ConfigurationService(gitService);
-                var branchService = new BranchService(gitService);
+                var configService = new ConfigurationService();
 
-                if (!gitService.IsGitRepository())
+                if (!GitRepositoryService.IsGitRepository())
                 {
                     ConsoleHelper.PrintError("Not a git repository");
                     return;
                 }
 
-                var repo = gitService.GetRepository();
+                var repo = GitRepositoryService.GetRepository();
                 var config = configService.GetOrCreateConfig();
                 var branchName = config.FeaturePrefix + name;
 
-                branchService.CheckoutBranch(repo, branchName);
+                BranchService.CheckoutBranch(repo, branchName);
                 ConsoleHelper.PrintSuccess($"Checked out to '{branchName}'");
             }
             catch (Exception ex)
@@ -149,17 +143,15 @@ internal class FeatureFinishCommand : Command
             try
             {
                 var name = n.GetValue(nameArgument);
-                var gitService = new GitRepositoryService();
-                var configService = new ConfigurationService(gitService);
-                var branchService = new BranchService(gitService);
+                var configService = new ConfigurationService();
 
-                if (!gitService.IsGitRepository())
+                if (!GitRepositoryService.IsGitRepository())
                 {
                     ConsoleHelper.PrintError("Not a git repository");
                     return;
                 }
 
-                var repo = gitService.GetRepository();
+                var repo = GitRepositoryService.GetRepository();
                 var config = configService.GetOrCreateConfig();
                 var branchName = config.FeaturePrefix + name;
 
@@ -176,7 +168,7 @@ internal class FeatureFinishCommand : Command
                 }
 
                 // Delete branch
-                branchService.DeleteBranch(repo, branchName);
+                BranchService.DeleteBranch(repo, branchName);
                 ConsoleHelper.PrintSuccess($"Feature branch '{branchName}' merged and deleted");
             }
             catch (Exception ex)
@@ -199,21 +191,19 @@ internal class FeatureDeleteCommand : Command
             try
             {
                 var name = n.GetValue(nameArgument);
-                var gitService = new GitRepositoryService();
-                var configService = new ConfigurationService(gitService);
-                var branchService = new BranchService(gitService);
+                var configService = new ConfigurationService();
 
-                if (!gitService.IsGitRepository())
+                if (!GitRepositoryService.IsGitRepository())
                 {
                     ConsoleHelper.PrintError("Not a git repository");
                     return;
                 }
 
-                var repo = gitService.GetRepository();
+                var repo = GitRepositoryService.GetRepository();
                 var config = configService.GetOrCreateConfig();
                 var branchName = config.FeaturePrefix + name;
 
-                branchService.DeleteBranch(repo, branchName);
+                BranchService.DeleteBranch(repo, branchName);
                 ConsoleHelper.PrintSuccess($"Feature branch '{branchName}' deleted");
             }
             catch (Exception ex)
@@ -236,21 +226,19 @@ internal class FeatureUpdateCommand : Command
             try
             {
                 var name = n.GetValue(nameArgument);
-                var gitService = new GitRepositoryService();
-                var configService = new ConfigurationService(gitService);
-                var branchService = new BranchService(gitService);
+                var configService = new ConfigurationService();
 
-                if (!gitService.IsGitRepository())
+                if (!GitRepositoryService.IsGitRepository())
                 {
                     ConsoleHelper.PrintError("Not a git repository");
                     return;
                 }
 
-                var repo = gitService.GetRepository();
+                var repo = GitRepositoryService.GetRepository();
                 var config = configService.GetOrCreateConfig();
                 var branchName = config.FeaturePrefix + name;
 
-                branchService.UpdateBranch(repo, branchName, config.DevelopmentBranch);
+                BranchService.UpdateBranch(repo, branchName, config.DevelopmentBranch);
                 ConsoleHelper.PrintSuccess($"Feature branch '{branchName}' updated");
             }
             catch (Exception ex)
@@ -269,19 +257,17 @@ internal class FeatureListCommand : Command
         {
             try
             {
-                var gitService = new GitRepositoryService();
-                var configService = new ConfigurationService(gitService);
-                var branchService = new BranchService(gitService);
+                var configService = new ConfigurationService();
 
-                if (!gitService.IsGitRepository())
+                if (!GitRepositoryService.IsGitRepository())
                 {
                     ConsoleHelper.PrintError("Not a git repository");
                     return;
                 }
 
-                var repo = gitService.GetRepository();
+                var repo = GitRepositoryService.GetRepository();
                 var config = configService.GetOrCreateConfig();
-                var branches = branchService.ListBranches(repo, config.FeaturePrefix);
+                var branches = BranchService.ListBranches(repo, config.FeaturePrefix);
 
                 if (branches.Count == 0)
                 {

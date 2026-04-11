@@ -28,15 +28,13 @@ internal class HotfixStartCommand : Command
         SetAction(n =>
         {
             var name = n.GetValue(nameArgument);
-            var gitService = new GitRepositoryService();
-            var configService = new ConfigurationService(gitService);
-            var branchService = new BranchService(gitService);
+            var configService = new ConfigurationService();
 
-            var repo = gitService.GetRepository();
+            var repo = GitRepositoryService.GetRepository();
             var config = configService.GetOrCreateConfig();
             var branchName = config.HotfixPrefix + name;
 
-            branchService.CreateBranch(repo, branchName, config.ProductionBranch);
+            BranchService.CreateBranch(repo, branchName, config.ProductionBranch);
             ConsoleHelper.PrintSuccess($"Hotfix branch '{branchName}' created from production");
         });
     }
@@ -52,15 +50,13 @@ internal class HotfixPublishCommand : Command
         SetAction(n =>
         {
             var name = n.GetValue(nameArgument);
-            var gitService = new GitRepositoryService();
-            var configService = new ConfigurationService(gitService);
-            var branchService = new BranchService(gitService);
+            var configService = new ConfigurationService();
 
-            var repo = gitService.GetRepository();
+            var repo = GitRepositoryService.GetRepository();
             var config = configService.GetOrCreateConfig();
             var branchName = config.HotfixPrefix + name;
 
-            branchService.PublishBranch(repo, branchName);
+            BranchService.PublishBranch(repo, branchName);
             ConsoleHelper.PrintSuccess($"Hotfix branch '{branchName}' published");
         });
     }
@@ -76,15 +72,13 @@ internal class HotfixCheckoutCommand : Command
         SetAction(n =>
         {
             var name = n.GetValue(nameArgument);
-            var gitService = new GitRepositoryService();
-            var configService = new ConfigurationService(gitService);
-            var branchService = new BranchService(gitService);
+            var configService = new ConfigurationService();
 
-            var repo = gitService.GetRepository();
+            var repo = GitRepositoryService.GetRepository();
             var config = configService.GetOrCreateConfig();
             var branchName = config.HotfixPrefix + name;
 
-            branchService.CheckoutBranch(repo, branchName);
+            BranchService.CheckoutBranch(repo, branchName);
             ConsoleHelper.PrintSuccess($"Checked out to '{branchName}'");
         });
     }
@@ -100,16 +94,13 @@ internal class HotfixFinishCommand : Command
         SetAction(n =>
         {
             var name = n.GetValue(nameArgument);
-            var gitService = new GitRepositoryService();
-            var configService = new ConfigurationService(gitService);
-            var branchService = new BranchService(gitService);
-            var mergeService = new MergeService(gitService, branchService);
+            var configService = new ConfigurationService();
 
-            var repo = gitService.GetRepository();
+            var repo = GitRepositoryService.GetRepository();
             var config = configService.GetOrCreateConfig();
             var branchName = config.HotfixPrefix + name;
 
-            mergeService.FinishHotfix(repo, branchName, config);
+            MergeService.FinishHotfix(repo, branchName, config);
         });
     }
 }
@@ -124,15 +115,13 @@ internal class HotfixDeleteCommand : Command
         SetAction(n =>
         {
             var name = n.GetValue(nameArgument);
-            var gitService = new GitRepositoryService();
-            var configService = new ConfigurationService(gitService);
-            var branchService = new BranchService(gitService);
+            var configService = new ConfigurationService();
 
-            var repo = gitService.GetRepository();
+            var repo = GitRepositoryService.GetRepository();
             var config = configService.GetOrCreateConfig();
             var branchName = config.HotfixPrefix + name;
 
-            branchService.DeleteBranch(repo, branchName);
+            BranchService.DeleteBranch(repo, branchName);
             ConsoleHelper.PrintSuccess($"Hotfix branch '{branchName}' deleted");
         });
     }
@@ -148,15 +137,13 @@ internal class HotfixUpdateCommand : Command
         SetAction(n =>
         {
             var name = n.GetValue(nameArgument);
-            var gitService = new GitRepositoryService();
-            var configService = new ConfigurationService(gitService);
-            var branchService = new BranchService(gitService);
+            var configService = new ConfigurationService();
 
-            var repo = gitService.GetRepository();
+            var repo = GitRepositoryService.GetRepository();
             var config = configService.GetOrCreateConfig();
             var branchName = config.HotfixPrefix + name;
 
-            branchService.UpdateBranch(repo, branchName, config.ProductionBranch);
+            BranchService.UpdateBranch(repo, branchName, config.ProductionBranch);
             ConsoleHelper.PrintSuccess($"Hotfix branch '{branchName}' updated");
         });
     }
@@ -168,13 +155,11 @@ internal class HotfixListCommand : Command
     {
         SetAction(n =>
         {
-            var gitService = new GitRepositoryService();
-            var configService = new ConfigurationService(gitService);
-            var branchService = new BranchService(gitService);
+            var configService = new ConfigurationService();
 
-            var repo = gitService.GetRepository();
+            var repo = GitRepositoryService.GetRepository();
             var config = configService.GetOrCreateConfig();
-            var branches = branchService.ListBranches(repo, config.HotfixPrefix);
+            var branches = BranchService.ListBranches(repo, config.HotfixPrefix);
 
             if (branches.Count == 0)
             {
