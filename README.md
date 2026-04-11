@@ -18,6 +18,8 @@ dotnet run --project src/GitFlow
 
 ### Initialize GitFlow
 
+Initialize GitFlow with interactive prompts:
+
 ```bash
 gitflow init [options]
 ```
@@ -25,18 +27,52 @@ gitflow init [options]
 Options:
 - `-g, --global` - Store configuration globally instead of locally
 - `-f, --force` - Overwrite existing configuration
-- `--production <branch>` - Production branch name (default: main)
-- `--development <branch>` - Development branch name (default: develop)
-- `--feature-prefix <prefix>` - Feature branch prefix (default: feature/)
-- `--release-prefix <prefix>` - Release branch prefix (default: release/)
-- `--hotfix-prefix <prefix>` - Hotfix branch prefix (default: hotfix/)
-- `--bugfix-prefix <prefix>` - Bugfix branch prefix (default: bugfix/)
-- `--version-prefix <prefix>` - Version tag prefix (default: v)
-- `--merge-strategy <strategy>` - Merge strategy (default: --no-ff)
 
-Example:
+The command will interactively ask for:
+1. Production branch (default: main)
+2. Development branch (default: develop)
+3. Feature branch prefix (default: feature/)
+4. Release branch prefix (default: release/)
+5. Hotfix branch prefix (default: hotfix/)
+6. Bugfix branch prefix (default: bugfix/)
+7. Version tag prefix (default: v)
+8. Merge strategy (default: --no-ff)
+
+Example session:
 ```bash
-gitflow init --production main --development develop
+$ gitflow init
+
+GitFlow Configuration
+
+Production branch [main]: 
+Development branch [develop]: 
+
+Branch Prefixes
+
+Feature branch prefix [feature/]: 
+Release branch prefix [release/]: 
+Hotfix branch prefix [hotfix/]: 
+Bugfix branch prefix [bugfix/]: 
+Version tag prefix [v]: 
+
+Merge Strategy
+
+Merge strategy [--no-ff]: 
+
+✓ GitFlow initialized (local config)
+  Production branch: main
+  Development branch: develop
+  Feature prefix: feature/
+  Release prefix: release/
+  Hotfix prefix: hotfix/
+  Bugfix prefix: bugfix/
+  Version prefix: v
+  Merge strategy: --no-ff
+```
+
+To use global configuration:
+```bash
+gitflow init -g
 ```
 
 ### Feature Branches
