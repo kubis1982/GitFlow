@@ -17,5 +17,8 @@ Parametry są opcjonalne i zawierają domyślne wartości.
 
 rootCommand.Add(new InitCommand());
 rootCommand.Add(new FeatureCommand());
+rootCommand.Add(new BugfixCommand());
+rootCommand.Add(new ReleaseCommand());
+rootCommand.Add(new HotfixCommand());
 
 return await CommandLineParser.Parse(rootCommand, args).InvokeAsync();
