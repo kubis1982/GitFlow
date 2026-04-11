@@ -10,7 +10,7 @@ Konfiguracja przechowywana jest w pliku konfiguracji gita (lokalnie lub globalni
 
 INICJALIZACJA:
 
-gitflow init --production main --development develop
+gitflow init
 
 Parametry są opcjonalne i zawierają domyślne wartości.
 ");
