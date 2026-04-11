@@ -1,6 +1,8 @@
 using System.CommandLine;
+using GitFlow.Commands.Base;
+using GitFlow.Models;
 using GitFlow.Services;
-using GitFlow.Utilities;
+using LibGit2Sharp;
 
 namespace GitFlow.Commands;
 
@@ -18,146 +20,52 @@ internal class ReleaseCommand : Command
     }
 }
 
-internal class ReleaseStartCommand : Command
+internal class ReleaseStartCommand : StartCommandBase
 {
-    public ReleaseStartCommand() : base("start", "Start a new release branch")
+    public ReleaseStartCommand() : base("release") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.ReleasePrefix;
+    protected override string GetSourceBranch(GitFlowConfig config) => config.DevelopmentBranch;
+}
+
+internal class ReleasePublishCommand : PublishCommandBase
+{
+    public ReleasePublishCommand() : base("release") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.ReleasePrefix;
+}
+
+internal class ReleaseCheckoutCommand : CheckoutCommandBase
+{
+    public ReleaseCheckoutCommand() : base("release") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.ReleasePrefix;
+}
+
+internal class ReleaseFinishCommand : FinishCommandBase
+{
+    public ReleaseFinishCommand() : base("release") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.ReleasePrefix;
+    
+    protected override void PerformFinish(Repository repo, string branchName, GitFlowConfig config, string branchType)
     {
-        var nameArgument = new Argument<string>("name") { Description = "Release version" };
-        Add(nameArgument);
-
-        SetAction(n =>
-        {
-            var name = n.GetValue(nameArgument);
-            var repo = GitRepositoryService.GetRepository();
-            var config = ConfigurationService.GetOrCreateConfig();
-            var branchName = config.ReleasePrefix + name;
-
-            BranchService.CreateBranch(repo, branchName, config.DevelopmentBranch);
-            ConsoleHelper.PrintSuccess($"Release branch '{branchName}' created");
-        });
+        MergeService.FinishRelease(repo, branchName, config);
     }
 }
 
-internal class ReleasePublishCommand : Command
+internal class ReleaseDeleteCommand : DeleteCommandBase
 {
-    public ReleasePublishCommand() : base("publish", "Publish a release branch")
-    {
-        var nameArgument = new Argument<string>("name") { Description = "Release version" };
-        Add(nameArgument);
-
-        SetAction(n =>
-        {
-            var name = n.GetValue(nameArgument);
-            var repo = GitRepositoryService.GetRepository();
-            var config = ConfigurationService.GetOrCreateConfig();
-            var branchName = config.ReleasePrefix + name;
-
-            BranchService.PublishBranch(repo, branchName);
-            ConsoleHelper.PrintSuccess($"Release branch '{branchName}' published");
-        });
-    }
+    public ReleaseDeleteCommand() : base("release") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.ReleasePrefix;
+    protected override string GetTargetBranch(GitFlowConfig config) => config.ProductionBranch;
 }
 
-internal class ReleaseCheckoutCommand : Command
+internal class ReleaseUpdateCommand : UpdateCommandBase
 {
-    public ReleaseCheckoutCommand() : base("checkout", "Checkout a release branch")
-    {
-        var nameArgument = new Argument<string>("name") { Description = "Release version" };
-        Add(nameArgument);
-
-        SetAction(n =>
-        {
-            var name = n.GetValue(nameArgument);
-            var repo = GitRepositoryService.GetRepository();
-            var config = ConfigurationService.GetOrCreateConfig();
-            var branchName = config.ReleasePrefix + name;
-
-            BranchService.CheckoutBranch(repo, branchName);
-            ConsoleHelper.PrintSuccess($"Checked out to '{branchName}'");
-        });
-    }
+    public ReleaseUpdateCommand() : base("release") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.ReleasePrefix;
+    protected override string GetParentBranch(GitFlowConfig config) => config.DevelopmentBranch;
 }
 
-internal class ReleaseFinishCommand : Command
+internal class ReleaseListCommand : ListCommandBase
 {
-    public ReleaseFinishCommand() : base("finish", "Finish a release branch")
-    {
-        var nameArgument = new Argument<string>("name") { Description = "Release version" };
-        Add(nameArgument);
-
-        SetAction(n =>
-        {
-            var name = n.GetValue(nameArgument);
-            var repo = GitRepositoryService.GetRepository();
-            var config = ConfigurationService.GetOrCreateConfig();
-            var branchName = config.ReleasePrefix + name;
-
-            MergeService.FinishRelease(repo, branchName, config);
-        });
-    }
-}
-
-internal class ReleaseDeleteCommand : Command
-{
-    public ReleaseDeleteCommand() : base("delete", "Delete a release branch")
-    {
-        var nameArgument = new Argument<string>("name") { Description = "Release version" };
-        Add(nameArgument);
-
-        SetAction(n =>
-        {
-            var name = n.GetValue(nameArgument);
-            var repo = GitRepositoryService.GetRepository();
-            var config = ConfigurationService.GetOrCreateConfig();
-            var branchName = config.ReleasePrefix + name;
-
-            BranchService.DeleteBranch(repo, branchName);
-            ConsoleHelper.PrintSuccess($"Release branch '{branchName}' deleted");
-        });
-    }
-}
-
-internal class ReleaseUpdateCommand : Command
-{
-    public ReleaseUpdateCommand() : base("update", "Update a release branch with latest development changes")
-    {
-        var nameArgument = new Argument<string>("name") { Description = "Release version" };
-        Add(nameArgument);
-
-        SetAction(n =>
-        {
-            var name = n.GetValue(nameArgument);
-            var repo = GitRepositoryService.GetRepository();
-            var config = ConfigurationService.GetOrCreateConfig();
-            var branchName = config.ReleasePrefix + name;
-
-            BranchService.UpdateBranch(repo, branchName, config.DevelopmentBranch);
-            ConsoleHelper.PrintSuccess($"Release branch '{branchName}' updated");
-        });
-    }
-}
-
-internal class ReleaseListCommand : Command
-{
-    public ReleaseListCommand() : base("list", "List all release branches")
-    {
-        SetAction(n =>
-        {
-            var repo = GitRepositoryService.GetRepository();
-            var config = ConfigurationService.GetOrCreateConfig();
-            var branches = BranchService.ListBranches(repo, config.ReleasePrefix);
-
-            if (branches.Count == 0)
-            {
-                Console.WriteLine("No release branches found");
-                return;
-            }
-
-            Console.WriteLine("Release branches:");
-            foreach (var branch in branches)
-            {
-                Console.WriteLine($"  {branch.FullName} ({branch.Tip})");
-            }
-        });
-    }
+    public ReleaseListCommand() : base("release") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.ReleasePrefix;
 }

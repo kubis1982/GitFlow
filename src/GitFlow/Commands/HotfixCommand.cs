@@ -1,6 +1,8 @@
 using System.CommandLine;
+using GitFlow.Commands.Base;
+using GitFlow.Models;
 using GitFlow.Services;
-using GitFlow.Utilities;
+using LibGit2Sharp;
 
 namespace GitFlow.Commands;
 
@@ -18,146 +20,52 @@ internal class HotfixCommand : Command
     }
 }
 
-internal class HotfixStartCommand : Command
+internal class HotfixStartCommand : StartCommandBase
 {
-    public HotfixStartCommand() : base("start", "Start a new hotfix branch")
+    public HotfixStartCommand() : base("hotfix") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.HotfixPrefix;
+    protected override string GetSourceBranch(GitFlowConfig config) => config.ProductionBranch;
+}
+
+internal class HotfixPublishCommand : PublishCommandBase
+{
+    public HotfixPublishCommand() : base("hotfix") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.HotfixPrefix;
+}
+
+internal class HotfixCheckoutCommand : CheckoutCommandBase
+{
+    public HotfixCheckoutCommand() : base("hotfix") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.HotfixPrefix;
+}
+
+internal class HotfixFinishCommand : FinishCommandBase
+{
+    public HotfixFinishCommand() : base("hotfix") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.HotfixPrefix;
+    
+    protected override void PerformFinish(Repository repo, string branchName, GitFlowConfig config, string branchType)
     {
-        var nameArgument = new Argument<string>("name") { Description = "Hotfix version" };
-        Add(nameArgument);
-
-        SetAction(n =>
-        {
-            var name = n.GetValue(nameArgument);
-            var repo = GitRepositoryService.GetRepository();
-            var config = ConfigurationService.GetOrCreateConfig();
-            var branchName = config.HotfixPrefix + name;
-
-            BranchService.CreateBranch(repo, branchName, config.ProductionBranch);
-            ConsoleHelper.PrintSuccess($"Hotfix branch '{branchName}' created from production");
-        });
+        MergeService.FinishHotfix(repo, branchName, config);
     }
 }
 
-internal class HotfixPublishCommand : Command
+internal class HotfixDeleteCommand : DeleteCommandBase
 {
-    public HotfixPublishCommand() : base("publish", "Publish a hotfix branch")
-    {
-        var nameArgument = new Argument<string>("name") { Description = "Hotfix version" };
-        Add(nameArgument);
-
-        SetAction(n =>
-        {
-            var name = n.GetValue(nameArgument);
-            var repo = GitRepositoryService.GetRepository();
-            var config = ConfigurationService.GetOrCreateConfig();
-            var branchName = config.HotfixPrefix + name;
-
-            BranchService.PublishBranch(repo, branchName);
-            ConsoleHelper.PrintSuccess($"Hotfix branch '{branchName}' published");
-        });
-    }
+    public HotfixDeleteCommand() : base("hotfix") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.HotfixPrefix;
+    protected override string GetTargetBranch(GitFlowConfig config) => config.ProductionBranch;
 }
 
-internal class HotfixCheckoutCommand : Command
+internal class HotfixUpdateCommand : UpdateCommandBase
 {
-    public HotfixCheckoutCommand() : base("checkout", "Checkout a hotfix branch")
-    {
-        var nameArgument = new Argument<string>("name") { Description = "Hotfix version" };
-        Add(nameArgument);
-
-        SetAction(n =>
-        {
-            var name = n.GetValue(nameArgument);
-            var repo = GitRepositoryService.GetRepository();
-            var config = ConfigurationService.GetOrCreateConfig();
-            var branchName = config.HotfixPrefix + name;
-
-            BranchService.CheckoutBranch(repo, branchName);
-            ConsoleHelper.PrintSuccess($"Checked out to '{branchName}'");
-        });
-    }
+    public HotfixUpdateCommand() : base("hotfix") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.HotfixPrefix;
+    protected override string GetParentBranch(GitFlowConfig config) => config.ProductionBranch;
 }
 
-internal class HotfixFinishCommand : Command
+internal class HotfixListCommand : ListCommandBase
 {
-    public HotfixFinishCommand() : base("finish", "Finish a hotfix branch")
-    {
-        var nameArgument = new Argument<string>("name") { Description = "Hotfix version" };
-        Add(nameArgument);
-
-        SetAction(n =>
-        {
-            var name = n.GetValue(nameArgument);
-            var repo = GitRepositoryService.GetRepository();
-            var config = ConfigurationService.GetOrCreateConfig();
-            var branchName = config.HotfixPrefix + name;
-
-            MergeService.FinishHotfix(repo, branchName, config);
-        });
-    }
-}
-
-internal class HotfixDeleteCommand : Command
-{
-    public HotfixDeleteCommand() : base("delete", "Delete a hotfix branch")
-    {
-        var nameArgument = new Argument<string>("name") { Description = "Hotfix version" };
-        Add(nameArgument);
-
-        SetAction(n =>
-        {
-            var name = n.GetValue(nameArgument);
-            var repo = GitRepositoryService.GetRepository();
-            var config = ConfigurationService.GetOrCreateConfig();
-            var branchName = config.HotfixPrefix + name;
-
-            BranchService.DeleteBranch(repo, branchName);
-            ConsoleHelper.PrintSuccess($"Hotfix branch '{branchName}' deleted");
-        });
-    }
-}
-
-internal class HotfixUpdateCommand : Command
-{
-    public HotfixUpdateCommand() : base("update", "Update a hotfix branch with latest production changes")
-    {
-        var nameArgument = new Argument<string>("name") { Description = "Hotfix version" };
-        Add(nameArgument);
-
-        SetAction(n =>
-        {
-            var name = n.GetValue(nameArgument);
-            var repo = GitRepositoryService.GetRepository();
-            var config = ConfigurationService.GetOrCreateConfig();
-            var branchName = config.HotfixPrefix + name;
-
-            BranchService.UpdateBranch(repo, branchName, config.ProductionBranch);
-            ConsoleHelper.PrintSuccess($"Hotfix branch '{branchName}' updated");
-        });
-    }
-}
-
-internal class HotfixListCommand : Command
-{
-    public HotfixListCommand() : base("list", "List all hotfix branches")
-    {
-        SetAction(n =>
-        {
-            var repo = GitRepositoryService.GetRepository();
-            var config = ConfigurationService.GetOrCreateConfig();
-            var branches = BranchService.ListBranches(repo, config.HotfixPrefix);
-
-            if (branches.Count == 0)
-            {
-                Console.WriteLine("No hotfix branches found");
-                return;
-            }
-
-            Console.WriteLine("Hotfix branches:");
-            foreach (var branch in branches)
-            {
-                Console.WriteLine($"  {branch.FullName} ({branch.Tip})");
-            }
-        });
-    }
+    public HotfixListCommand() : base("hotfix") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.HotfixPrefix;
 }

@@ -96,6 +96,7 @@ public static class BranchService
     public static List<BranchInfo> ListBranches(Repository repo, string prefix)
     {
         var branches = new List<BranchInfo>();
+        var currentBranch = repo.Head.FriendlyName;
 
         foreach (var branch in repo.Branches)
         {
@@ -107,6 +108,7 @@ public static class BranchService
                     FullName = branch.FriendlyName,
                     IsLocal = branch.IsRemote == false,
                     IsRemote = branch.IsRemote,
+                    IsCurrentBranch = branch.FriendlyName == currentBranch,
                     Tip = branch.Tip.Sha.Substring(0, 7)
                 });
             }

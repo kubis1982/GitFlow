@@ -1,7 +1,9 @@
 using System.CommandLine;
+using GitFlow.Commands.Base;
+using GitFlow.Models;
 using GitFlow.Services;
 using GitFlow.Utilities;
-using GitFlow.Models;
+using LibGit2Sharp;
 
 namespace GitFlow.Commands;
 
@@ -19,258 +21,87 @@ internal class FeatureCommand : Command
     }
 }
 
-internal class FeatureStartCommand : Command
+internal class FeatureStartCommand : StartCommandBase
 {
-    public FeatureStartCommand() : base("start", "Start a new feature branch")
-    {
-        var nameArgument = new Argument<string>("name") { Description = "Feature name" };
-        Add(nameArgument);
-
-        SetAction(n =>
-        {
-            try
-            {
-                var name = n.GetValue(nameArgument);
-                if (!GitRepositoryService.IsGitRepository())
-                {
-                    ConsoleHelper.PrintError("Not a git repository");
-                    return;
-                }
-
-                var repo = GitRepositoryService.GetRepository();
-                var config = ConfigurationService.GetOrCreateConfig();
-
-                var branchName = config.FeaturePrefix + name;
-
-                if (BranchService.BranchExists(repo, branchName))
-                {
-                    ConsoleHelper.PrintError($"Feature branch '{branchName}' already exists");
-                    return;
-                }
-
-                BranchService.CreateBranch(repo, branchName, config.DevelopmentBranch);
-                ConsoleHelper.PrintSuccess($"Feature branch '{branchName}' created");
-            }
-            catch (Exception ex)
-            {
-                ConsoleHelper.PrintError($"Error: {ex.Message}");
-            }
-        });
-    }
+    public FeatureStartCommand() : base("feature") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.FeaturePrefix;
+    protected override string GetSourceBranch(GitFlowConfig config) => config.DevelopmentBranch;
 }
 
-internal class FeaturePublishCommand : Command
+internal class FeaturePublishCommand : PublishCommandBase
 {
-    public FeaturePublishCommand() : base("publish", "Publish a feature branch")
-    {
-        var nameArgument = new Argument<string>("name") { Description = "Feature name" };
-        Add(nameArgument);
-
-        SetAction(n =>
-        {
-            try
-            {
-                var name = n.GetValue(nameArgument);
-                if (!GitRepositoryService.IsGitRepository())
-                {
-                    ConsoleHelper.PrintError("Not a git repository");
-                    return;
-                }
-
-                var repo = GitRepositoryService.GetRepository();
-                var config = ConfigurationService.GetOrCreateConfig();
-                var branchName = config.FeaturePrefix + name;
-
-                BranchService.PublishBranch(repo, branchName);
-                ConsoleHelper.PrintSuccess($"Feature branch '{branchName}' published");
-            }
-            catch (Exception ex)
-            {
-                ConsoleHelper.PrintError($"Error: {ex.Message}");
-            }
-        });
-    }
+    public FeaturePublishCommand() : base("feature") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.FeaturePrefix;
 }
 
-internal class FeatureCheckoutCommand : Command
+internal class FeatureCheckoutCommand : CheckoutCommandBase
 {
-    public FeatureCheckoutCommand() : base("checkout", "Checkout a feature branch")
+    public FeatureCheckoutCommand() : base("feature") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.FeaturePrefix;
+}
+
+internal class FeatureFinishCommand : FinishCommandBase
+{
+    public FeatureFinishCommand() : base("feature") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.FeaturePrefix;
+    
+    protected override void PerformFinish(Repository repo, string branchName, GitFlowConfig config, string branchType)
     {
-        var nameArgument = new Argument<string>("name") { Description = "Feature name" };
-        Add(nameArgument);
-
-        SetAction(n =>
+        // Verify sync with remote
+        if (!BranchService.LocalAndRemoteInSync(repo, branchName))
         {
-            try
+            Console.Write("Local branch is not in sync with remote. Pull latest changes? (Y/n): ");
+            var response = Console.ReadLine();
+            if (response?.ToLower() != "n")
             {
-                var name = n.GetValue(nameArgument);
-                if (!GitRepositoryService.IsGitRepository())
-                {
-                    ConsoleHelper.PrintError("Not a git repository");
-                    return;
-                }
-
-                var repo = GitRepositoryService.GetRepository();
-                var config = ConfigurationService.GetOrCreateConfig();
-                var branchName = config.FeaturePrefix + name;
-
                 BranchService.CheckoutBranch(repo, branchName);
-                ConsoleHelper.PrintSuccess($"Checked out to '{branchName}'");
             }
-            catch (Exception ex)
-            {
-                ConsoleHelper.PrintError($"Error: {ex.Message}");
-            }
-        });
+        }
+
+        // Merge to development
+        LibGit2Sharp.Commands.Checkout(repo, config.DevelopmentBranch);
+        
+        var featureBranch = repo.Branches[branchName];
+        var signature = repo.Config.BuildSignature(DateTimeOffset.Now);
+        
+        var mergeOptions = new MergeOptions();
+        if (config.MergeStrategy == "--no-ff")
+            mergeOptions.FastForwardStrategy = FastForwardStrategy.NoFastForward;
+        else if (config.MergeStrategy == "squash")
+            mergeOptions.FastForwardStrategy = FastForwardStrategy.NoFastForward;
+        else if (config.MergeStrategy == "ff-only")
+            mergeOptions.FastForwardStrategy = FastForwardStrategy.FastForwardOnly;
+
+        var mergeResult = repo.Merge(featureBranch, signature, mergeOptions);
+
+        if (mergeResult.Status == MergeStatus.Conflicts)
+        {
+            ConsoleHelper.PrintError("Merge conflicts detected. Resolve conflicts and commit manually.");
+            return;
+        }
+
+        // Delete branch
+        BranchService.DeleteBranch(repo, branchName);
+        ConsoleHelper.PrintSuccess($"Feature '{branchName}' finished and merged to {config.DevelopmentBranch}");
     }
 }
 
-internal class FeatureFinishCommand : Command
+internal class FeatureDeleteCommand : DeleteCommandBase
 {
-    public FeatureFinishCommand() : base("finish", "Finish a feature branch")
-    {
-        var nameArgument = new Argument<string>("name") { Description = "Feature name" };
-        Add(nameArgument);
-
-        SetAction(n =>
-        {
-            try
-            {
-                var name = n.GetValue(nameArgument);
-                if (!GitRepositoryService.IsGitRepository())
-                {
-                    ConsoleHelper.PrintError("Not a git repository");
-                    return;
-                }
-
-                var repo = GitRepositoryService.GetRepository();
-                var config = ConfigurationService.GetOrCreateConfig();
-                var branchName = config.FeaturePrefix + name;
-
-                // Merge to development
-                LibGit2Sharp.Commands.Checkout(repo, config.DevelopmentBranch);
-                var branch = repo.Branches[branchName];
-                var mergeOptions = new LibGit2Sharp.MergeOptions();
-                var result = repo.Merge(branch, new LibGit2Sharp.Signature("GitFlow", "gitflow@local", DateTimeOffset.Now), mergeOptions);
-
-                if (result.Status == LibGit2Sharp.MergeStatus.Conflicts)
-                {
-                    ConsoleHelper.PrintError("Merge conflicts detected");
-                    return;
-                }
-
-                // Delete branch
-                BranchService.DeleteBranch(repo, branchName);
-                ConsoleHelper.PrintSuccess($"Feature branch '{branchName}' merged and deleted");
-            }
-            catch (Exception ex)
-            {
-                ConsoleHelper.PrintError($"Error: {ex.Message}");
-            }
-        });
-    }
+    public FeatureDeleteCommand() : base("feature") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.FeaturePrefix;
+    protected override string GetTargetBranch(GitFlowConfig config) => config.DevelopmentBranch;
 }
 
-internal class FeatureDeleteCommand : Command
+internal class FeatureUpdateCommand : UpdateCommandBase
 {
-    public FeatureDeleteCommand() : base("delete", "Delete a feature branch")
-    {
-        var nameArgument = new Argument<string>("name") { Description = "Feature name" };
-        Add(nameArgument);
-
-        SetAction(n =>
-        {
-            try
-            {
-                var name = n.GetValue(nameArgument);
-                if (!GitRepositoryService.IsGitRepository())
-                {
-                    ConsoleHelper.PrintError("Not a git repository");
-                    return;
-                }
-
-                var repo = GitRepositoryService.GetRepository();
-                var config = ConfigurationService.GetOrCreateConfig();
-                var branchName = config.FeaturePrefix + name;
-
-                BranchService.DeleteBranch(repo, branchName);
-                ConsoleHelper.PrintSuccess($"Feature branch '{branchName}' deleted");
-            }
-            catch (Exception ex)
-            {
-                ConsoleHelper.PrintError($"Error: {ex.Message}");
-            }
-        });
-    }
+    public FeatureUpdateCommand() : base("feature") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.FeaturePrefix;
+    protected override string GetParentBranch(GitFlowConfig config) => config.DevelopmentBranch;
 }
 
-internal class FeatureUpdateCommand : Command
+internal class FeatureListCommand : ListCommandBase
 {
-    public FeatureUpdateCommand() : base("update", "Update a feature branch with latest development changes")
-    {
-        var nameArgument = new Argument<string>("name") { Description = "Feature name" };
-        Add(nameArgument);
-
-        SetAction(n =>
-        {
-            try
-            {
-                var name = n.GetValue(nameArgument);
-                if (!GitRepositoryService.IsGitRepository())
-                {
-                    ConsoleHelper.PrintError("Not a git repository");
-                    return;
-                }
-
-                var repo = GitRepositoryService.GetRepository();
-                var config = ConfigurationService.GetOrCreateConfig();
-                var branchName = config.FeaturePrefix + name;
-
-                BranchService.UpdateBranch(repo, branchName, config.DevelopmentBranch);
-                ConsoleHelper.PrintSuccess($"Feature branch '{branchName}' updated");
-            }
-            catch (Exception ex)
-            {
-                ConsoleHelper.PrintError($"Error: {ex.Message}");
-            }
-        });
-    }
-}
-
-internal class FeatureListCommand : Command
-{
-    public FeatureListCommand() : base("list", "List all feature branches")
-    {
-        SetAction(n =>
-        {
-            try
-            {
-                if (!GitRepositoryService.IsGitRepository())
-                {
-                    ConsoleHelper.PrintError("Not a git repository");
-                    return;
-                }
-
-                var repo = GitRepositoryService.GetRepository();
-                var config = ConfigurationService.GetOrCreateConfig();
-                var branches = BranchService.ListBranches(repo, config.FeaturePrefix);
-
-                if (branches.Count == 0)
-                {
-                    Console.WriteLine("No feature branches found");
-                    return;
-                }
-
-                Console.WriteLine("Feature branches:");
-                foreach (var branch in branches)
-                {
-                    Console.WriteLine($"  {branch.FullName} ({branch.Tip})");
-                }
-            }
-            catch (Exception ex)
-            {
-                ConsoleHelper.PrintError($"Error: {ex.Message}");
-            }
-        });
-    }
+    public FeatureListCommand() : base("feature") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.FeaturePrefix;
 }

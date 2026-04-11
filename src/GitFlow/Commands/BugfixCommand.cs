@@ -1,7 +1,9 @@
 using System.CommandLine;
+using GitFlow.Commands.Base;
+using GitFlow.Models;
 using GitFlow.Services;
 using GitFlow.Utilities;
-using GitFlow.Models;
+using LibGit2Sharp;
 
 namespace GitFlow.Commands;
 
@@ -19,256 +21,87 @@ internal class BugfixCommand : Command
     }
 }
 
-internal class BugfixStartCommand : Command
+internal class BugfixStartCommand : StartCommandBase
 {
-    public BugfixStartCommand() : base("start", "Start a new bugfix branch")
-    {
-        var nameArgument = new Argument<string>("name") { Description = "Bugfix name" };
-        Add(nameArgument);
-
-        SetAction(n =>
-        {
-            try
-            {
-                var name = n.GetValue(nameArgument);
-                if (!GitRepositoryService.IsGitRepository())
-                {
-                    ConsoleHelper.PrintError("Not a git repository");
-                    return;
-                }
-
-                var repo = GitRepositoryService.GetRepository();
-                var config = ConfigurationService.GetOrCreateConfig();
-                var branchName = config.BugfixPrefix + name;
-
-                if (BranchService.BranchExists(repo, branchName))
-                {
-                    ConsoleHelper.PrintError($"Bugfix branch '{branchName}' already exists");
-                    return;
-                }
-
-                BranchService.CreateBranch(repo, branchName, config.DevelopmentBranch);
-                ConsoleHelper.PrintSuccess($"Bugfix branch '{branchName}' created");
-            }
-            catch (Exception ex)
-            {
-                ConsoleHelper.PrintError($"Error: {ex.Message}");
-            }
-        });
-    }
+    public BugfixStartCommand() : base("bugfix") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.BugfixPrefix;
+    protected override string GetSourceBranch(GitFlowConfig config) => config.DevelopmentBranch;
 }
 
-internal class BugfixPublishCommand : Command
+internal class BugfixPublishCommand : PublishCommandBase
 {
-    public BugfixPublishCommand() : base("publish", "Publish a bugfix branch")
-    {
-        var nameArgument = new Argument<string>("name") { Description = "Bugfix name" };
-        Add(nameArgument);
-
-        SetAction(n =>
-        {
-            try
-            {
-                var name = n.GetValue(nameArgument);
-                if (!GitRepositoryService.IsGitRepository())
-                {
-                    ConsoleHelper.PrintError("Not a git repository");
-                    return;
-                }
-
-                var repo = GitRepositoryService.GetRepository();
-                var config = ConfigurationService.GetOrCreateConfig();
-                var branchName = config.BugfixPrefix + name;
-
-                BranchService.PublishBranch(repo, branchName);
-                ConsoleHelper.PrintSuccess($"Bugfix branch '{branchName}' published");
-            }
-            catch (Exception ex)
-            {
-                ConsoleHelper.PrintError($"Error: {ex.Message}");
-            }
-        });
-    }
+    public BugfixPublishCommand() : base("bugfix") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.BugfixPrefix;
 }
 
-internal class BugfixCheckoutCommand : Command
+internal class BugfixCheckoutCommand : CheckoutCommandBase
 {
-    public BugfixCheckoutCommand() : base("checkout", "Checkout a bugfix branch")
+    public BugfixCheckoutCommand() : base("bugfix") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.BugfixPrefix;
+}
+
+internal class BugfixFinishCommand : FinishCommandBase
+{
+    public BugfixFinishCommand() : base("bugfix") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.BugfixPrefix;
+    
+    protected override void PerformFinish(Repository repo, string branchName, GitFlowConfig config, string branchType)
     {
-        var nameArgument = new Argument<string>("name") { Description = "Bugfix name" };
-        Add(nameArgument);
-
-        SetAction(n =>
+        // Verify sync with remote
+        if (!BranchService.LocalAndRemoteInSync(repo, branchName))
         {
-            try
+            Console.Write("Local branch is not in sync with remote. Pull latest changes? (Y/n): ");
+            var response = Console.ReadLine();
+            if (response?.ToLower() != "n")
             {
-                var name = n.GetValue(nameArgument);
-                if (!GitRepositoryService.IsGitRepository())
-                {
-                    ConsoleHelper.PrintError("Not a git repository");
-                    return;
-                }
-
-                var repo = GitRepositoryService.GetRepository();
-                var config = ConfigurationService.GetOrCreateConfig();
-                var branchName = config.BugfixPrefix + name;
-
                 BranchService.CheckoutBranch(repo, branchName);
-                ConsoleHelper.PrintSuccess($"Checked out to '{branchName}'");
             }
-            catch (Exception ex)
-            {
-                ConsoleHelper.PrintError($"Error: {ex.Message}");
-            }
-        });
+        }
+
+        // Merge to development
+        LibGit2Sharp.Commands.Checkout(repo, config.DevelopmentBranch);
+        
+        var bugfixBranch = repo.Branches[branchName];
+        var signature = repo.Config.BuildSignature(DateTimeOffset.Now);
+        
+        var mergeOptions = new MergeOptions();
+        if (config.MergeStrategy == "--no-ff")
+            mergeOptions.FastForwardStrategy = FastForwardStrategy.NoFastForward;
+        else if (config.MergeStrategy == "squash")
+            mergeOptions.FastForwardStrategy = FastForwardStrategy.NoFastForward;
+        else if (config.MergeStrategy == "ff-only")
+            mergeOptions.FastForwardStrategy = FastForwardStrategy.FastForwardOnly;
+
+        var mergeResult = repo.Merge(bugfixBranch, signature, mergeOptions);
+
+        if (mergeResult.Status == MergeStatus.Conflicts)
+        {
+            ConsoleHelper.PrintError("Merge conflicts detected. Resolve conflicts and commit manually.");
+            return;
+        }
+
+        // Delete branch
+        BranchService.DeleteBranch(repo, branchName);
+        ConsoleHelper.PrintSuccess($"Bugfix '{branchName}' finished and merged to {config.DevelopmentBranch}");
     }
 }
 
-internal class BugfixFinishCommand : Command
+internal class BugfixDeleteCommand : DeleteCommandBase
 {
-    public BugfixFinishCommand() : base("finish", "Finish a bugfix branch")
-    {
-        var nameArgument = new Argument<string>("name") { Description = "Bugfix name" };
-        Add(nameArgument);
-
-        SetAction(n =>
-        {
-            try
-            {
-                var name = n.GetValue(nameArgument);
-                if (!GitRepositoryService.IsGitRepository())
-                {
-                    ConsoleHelper.PrintError("Not a git repository");
-                    return;
-                }
-
-                var repo = GitRepositoryService.GetRepository();
-                var config = ConfigurationService.GetOrCreateConfig();
-                var branchName = config.BugfixPrefix + name;
-
-                // Merge to development
-                LibGit2Sharp.Commands.Checkout(repo, config.DevelopmentBranch);
-                var branch = repo.Branches[branchName];
-                var mergeOptions = new LibGit2Sharp.MergeOptions();
-                var result = repo.Merge(branch, new LibGit2Sharp.Signature("GitFlow", "gitflow@local", DateTimeOffset.Now), mergeOptions);
-
-                if (result.Status == LibGit2Sharp.MergeStatus.Conflicts)
-                {
-                    ConsoleHelper.PrintError("Merge conflicts detected");
-                    return;
-                }
-
-                BranchService.DeleteBranch(repo, branchName);
-                ConsoleHelper.PrintSuccess($"Bugfix branch '{branchName}' merged and deleted");
-            }
-            catch (Exception ex)
-            {
-                ConsoleHelper.PrintError($"Error: {ex.Message}");
-            }
-        });
-    }
+    public BugfixDeleteCommand() : base("bugfix") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.BugfixPrefix;
+    protected override string GetTargetBranch(GitFlowConfig config) => config.DevelopmentBranch;
 }
 
-internal class BugfixDeleteCommand : Command
+internal class BugfixUpdateCommand : UpdateCommandBase
 {
-    public BugfixDeleteCommand() : base("delete", "Delete a bugfix branch")
-    {
-        var nameArgument = new Argument<string>("name") { Description = "Bugfix name" };
-        Add(nameArgument);
-
-        SetAction(n =>
-        {
-            try
-            {
-                var name = n.GetValue(nameArgument);
-                if (!GitRepositoryService.IsGitRepository())
-                {
-                    ConsoleHelper.PrintError("Not a git repository");
-                    return;
-                }
-
-                var repo = GitRepositoryService.GetRepository();
-                var config = ConfigurationService.GetOrCreateConfig();
-                var branchName = config.BugfixPrefix + name;
-
-                BranchService.DeleteBranch(repo, branchName);
-                ConsoleHelper.PrintSuccess($"Bugfix branch '{branchName}' deleted");
-            }
-            catch (Exception ex)
-            {
-                ConsoleHelper.PrintError($"Error: {ex.Message}");
-            }
-        });
-    }
+    public BugfixUpdateCommand() : base("bugfix") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.BugfixPrefix;
+    protected override string GetParentBranch(GitFlowConfig config) => config.DevelopmentBranch;
 }
 
-internal class BugfixUpdateCommand : Command
+internal class BugfixListCommand : ListCommandBase
 {
-    public BugfixUpdateCommand() : base("update", "Update a bugfix branch with latest development changes")
-    {
-        var nameArgument = new Argument<string>("name") { Description = "Bugfix name" };
-        Add(nameArgument);
-
-        SetAction(n =>
-        {
-            try
-            {
-                var name = n.GetValue(nameArgument);
-                if (!GitRepositoryService.IsGitRepository())
-                {
-                    ConsoleHelper.PrintError("Not a git repository");
-                    return;
-                }
-
-                var repo = GitRepositoryService.GetRepository();
-                var config = ConfigurationService.GetOrCreateConfig();
-                var branchName = config.BugfixPrefix + name;
-
-                BranchService.UpdateBranch(repo, branchName, config.DevelopmentBranch);
-                ConsoleHelper.PrintSuccess($"Bugfix branch '{branchName}' updated");
-            }
-            catch (Exception ex)
-            {
-                ConsoleHelper.PrintError($"Error: {ex.Message}");
-            }
-        });
-    }
-}
-
-internal class BugfixListCommand : Command
-{
-    public BugfixListCommand() : base("list", "List all bugfix branches")
-    {
-        SetAction(n =>
-        {
-            try
-            {
-                if (!GitRepositoryService.IsGitRepository())
-                {
-                    ConsoleHelper.PrintError("Not a git repository");
-                    return;
-                }
-
-                var repo = GitRepositoryService.GetRepository();
-                var config = ConfigurationService.GetOrCreateConfig();
-                var branches = BranchService.ListBranches(repo, config.BugfixPrefix);
-
-                if (branches.Count == 0)
-                {
-                    Console.WriteLine("No bugfix branches found");
-                    return;
-                }
-
-                Console.WriteLine("Bugfix branches:");
-                foreach (var branch in branches)
-                {
-                    Console.WriteLine($"  {branch.FullName} ({branch.Tip})");
-                }
-            }
-            catch (Exception ex)
-            {
-                ConsoleHelper.PrintError($"Error: {ex.Message}");
-            }
-        });
-    }
+    public BugfixListCommand() : base("bugfix") { }
+    protected override string GetBranchPrefix(GitFlowConfig config) => config.BugfixPrefix;
 }
