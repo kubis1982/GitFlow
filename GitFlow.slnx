@@ -2,5 +2,8 @@
   <Folder Name="/Solution Items/">
     <File Path="README.md" />
   </Folder>
+  <Folder Name="/Solution Items/ci/">
+    <File Path=".github/workflows/release.yml" />
+  </Folder>
   <Project Path="src/GitFlow/GitFlow.csproj" />
 </Solution>
