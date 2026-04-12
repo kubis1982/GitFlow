@@ -8,4 +8,8 @@ public class BranchInfo
     public bool IsRemote { get; set; }
     public bool IsCurrentBranch { get; set; }
     public string Tip { get; set; } = string.Empty;
+    public bool IsTracking { get; set; }
+    public string? TrackedBranchName { get; set; }
+    public int AheadBy { get; set; }
+    public int BehindBy { get; set; }
 }

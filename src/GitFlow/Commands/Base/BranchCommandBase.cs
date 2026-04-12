@@ -270,7 +270,32 @@ internal abstract class ListCommandBase : Command
                 foreach (var branch in branches)
                 {
                     var marker = branch.IsCurrentBranch ? "* " : "  ";
-                    Console.WriteLine($"{marker}{branch.Name}");
+                    var location = "";
+                    
+                    if (branch.IsLocal && branch.IsRemote)
+                    {
+                        if (branch.IsTracking)
+                        {
+                            if (branch.AheadBy > 0 && branch.BehindBy > 0)
+                                location = $" [↕ {branch.AheadBy}↑ {branch.BehindBy}↓]";
+                            else if (branch.AheadBy > 0)
+                                location = $" [↑ {branch.AheadBy}]";
+                            else if (branch.BehindBy > 0)
+                                location = $" [↓ {branch.BehindBy}]";
+                            else
+                                location = " [↕]";
+                        }
+                        else
+                        {
+                            location = " [local+remote]";
+                        }
+                    }
+                    else if (branch.IsRemote && !branch.IsLocal)
+                    {
+                        location = " [remote-only]";
+                    }
+                    
+                    Console.WriteLine($"{marker}{branch.Name}{location}");
                 }
             }
             catch (Exception ex)

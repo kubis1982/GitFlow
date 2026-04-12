@@ -4,15 +4,15 @@ using System.CommandLine.Parsing;
 
 RootCommand rootCommand = new(@"GitFlow - Git workflow management tool
 
-Zarządza gałęziami git zgodnie ze schematem GitFlow.
+Manages git branches according to the GitFlow schema.
 
-Konfiguracja przechowywana jest w pliku konfiguracji gita (lokalnie lub globalnie).
+Configuration is stored in the git configuration file (locally or globally).
 
-INICJALIZACJA:
+INITIALIZATION:
 
 gitflow init
 
-Parametry są opcjonalne i zawierają domyślne wartości.
+Parameters are optional and contain default values.
 ");
 
 rootCommand.Add(new InitCommand());
