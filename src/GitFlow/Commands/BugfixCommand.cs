@@ -47,18 +47,16 @@ internal class BugfixFinishCommand : FinishCommandBase
     
     protected override void PerformFinish(Repository repo, string branchName, GitFlowConfig config, string branchType)
     {
-        // Verify sync with remote
-        if (!BranchService.LocalAndRemoteInSync(repo, branchName))
-        {
-            Console.Write("Local branch is not in sync with remote. Pull latest changes? (Y/n): ");
-            var response = Console.ReadLine();
-            if (response?.ToLower() != "n")
-            {
-                BranchService.CheckoutBranch(repo, branchName);
-            }
-        }
+        ConsoleHelper.PrintInfo($"Starting finish process for bugfix '{branchName}'...");
+        
+        // Step 1: Verify working branch is up to date (blocking)
+        BranchService.VerifyWorkingBranchIsUpToDate(repo, branchName);
 
-        // Merge to development
+        // Step 2: Ensure development branch is up to date
+        BranchService.EnsureBranchIsUpToDate(repo, config.DevelopmentBranch);
+
+        // Step 3: Merge to development
+        ConsoleHelper.PrintInfo($"Merging '{branchName}' to '{config.DevelopmentBranch}'...");
         LibGit2Sharp.Commands.Checkout(repo, config.DevelopmentBranch);
         
         var bugfixBranch = repo.Branches[branchName];
@@ -80,9 +78,14 @@ internal class BugfixFinishCommand : FinishCommandBase
             return;
         }
 
-        // Delete branch
-        BranchService.DeleteBranch(repo, branchName);
-        ConsoleHelper.PrintSuccess($"Bugfix '{branchName}' finished and merged to {config.DevelopmentBranch}");
+        // Step 4: Delete branch (local and remote)
+        ConsoleHelper.PrintInfo($"Deleting bugfix branch '{branchName}'...");
+        BranchService.DeleteBranch(repo, branchName, deleteRemote: true);
+
+        // Step 5: Ensure we're on development branch
+        LibGit2Sharp.Commands.Checkout(repo, config.DevelopmentBranch);
+        
+        ConsoleHelper.PrintSuccess($"Bugfix '{branchName}' finished successfully and merged to '{config.DevelopmentBranch}'.");
     }
 }
 

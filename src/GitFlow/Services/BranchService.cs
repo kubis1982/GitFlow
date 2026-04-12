@@ -289,4 +289,114 @@ public static class BranchService
         var baseCommit = repo.ObjectDatabase.FindMergeBase(branch.Tip, targetBranch.Tip);
         return branch.Tip.Sha != baseCommit.Sha;
     }
+
+    public static void VerifyWorkingBranchIsUpToDate(Repository repo, string branchName)
+    {
+        var branch = repo.Branches[branchName];
+        if (branch == null)
+            throw new InvalidOperationException($"Branch '{branchName}' not found");
+
+        // If branch is not tracking remote, we can't verify - assume OK
+        if (!branch.IsTracking)
+        {
+            ConsoleHelper.PrintWarning($"Branch '{branchName}' is not tracking a remote branch. Skipping sync verification.");
+            return;
+        }
+
+        // Fetch latest remote information
+        if (FetchService.HasRemote(repo))
+        {
+            try
+            {
+                ConsoleHelper.PrintInfo("Fetching latest changes from remote...");
+                FetchService.FetchAll(repo);
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new InvalidOperationException($"Failed to fetch from remote: {ex.Message}. Cannot verify branch is up to date.", ex);
+            }
+        }
+
+        // Re-fetch branch after fetch to get updated tracking info
+        branch = repo.Branches[branchName];
+
+        if (!LocalAndRemoteInSync(repo, branchName))
+        {
+            throw new InvalidOperationException(
+                $"Branch '{branchName}' is not up to date with remote. " +
+                $"Please pull latest changes first using 'git pull' or checkout and update the branch.");
+        }
+
+        ConsoleHelper.PrintSuccess($"Branch '{branchName}' is up to date with remote.");
+    }
+
+    public static void EnsureBranchIsUpToDate(Repository repo, string branchName)
+    {
+        var branch = repo.Branches[branchName];
+        if (branch == null)
+            throw new InvalidOperationException($"Branch '{branchName}' not found");
+
+        // If branch is not tracking remote, we can't update - assume OK
+        if (!branch.IsTracking)
+        {
+            ConsoleHelper.PrintWarning($"Branch '{branchName}' is not tracking a remote branch. Skipping update.");
+            return;
+        }
+
+        // Fetch latest remote information
+        if (FetchService.HasRemote(repo))
+        {
+            try
+            {
+                ConsoleHelper.PrintInfo($"Fetching latest changes for '{branchName}' from remote...");
+                FetchService.FetchAll(repo);
+            }
+            catch (InvalidOperationException ex)
+            {
+                ConsoleHelper.PrintWarning($"Failed to fetch from remote: {ex.Message}. Continuing with local data.");
+                return;
+            }
+        }
+
+        // Re-fetch branch after fetch to get updated tracking info
+        branch = repo.Branches[branchName];
+
+        if (!LocalAndRemoteInSync(repo, branchName))
+        {
+            ConsoleHelper.PrintInfo($"Branch '{branchName}' is behind remote. Pulling latest changes...");
+            
+            // Checkout the branch to pull
+            var currentBranch = repo.Head.FriendlyName;
+            LibGit2Sharp.Commands.Checkout(repo, branch);
+
+            try
+            {
+                var options = new PullOptions
+                {
+                    FetchOptions = new FetchOptions()
+                };
+                var signature = repo.Config.BuildSignature(DateTimeOffset.Now);
+                var result = LibGit2Sharp.Commands.Pull(repo, signature, options);
+
+                if (result.Status == MergeStatus.Conflicts)
+                {
+                    throw new InvalidOperationException($"Merge conflicts detected while updating '{branchName}'. Please resolve manually.");
+                }
+
+                ConsoleHelper.PrintSuccess($"Branch '{branchName}' updated successfully from remote.");
+            }
+            finally
+            {
+                // Return to original branch if it's different
+                if (currentBranch != branchName)
+                {
+                    LibGit2Sharp.Commands.Checkout(repo, currentBranch);
+                }
+            }
+        }
+        else
+        {
+            ConsoleHelper.PrintSuccess($"Branch '{branchName}' is already up to date with remote.");
+        }
+    }
 }

@@ -12,29 +12,40 @@ public static class MergeService
         if (releaseBranch == null)
             throw new InvalidOperationException($"Release branch '{branchName}' not found");
 
+        ConsoleHelper.PrintInfo($"Starting finish process for release '{branchName}'...");
+
         // Extract version from branch name
         var version = branchName.Replace(config.ReleasePrefix, "");
 
-        // 1. Merge to production
-        ConsoleHelper.PrintInfo("Merging to production branch...");
+        // Step 1: Verify working branch is up to date (blocking)
+        BranchService.VerifyWorkingBranchIsUpToDate(repo, branchName);
+
+        // Step 2: Ensure production and development branches are up to date
+        BranchService.EnsureBranchIsUpToDate(repo, config.ProductionBranch);
+        BranchService.EnsureBranchIsUpToDate(repo, config.DevelopmentBranch);
+
+        // Step 3: Merge to production
+        ConsoleHelper.PrintInfo($"Merging '{branchName}' to '{config.ProductionBranch}'...");
         LibGit2Sharp.Commands.Checkout(repo, config.ProductionBranch);
-        var prodResult = repo.Merge(releaseBranch, new Signature("GitFlow", "gitflow@local", DateTimeOffset.Now), new MergeOptions());
+        var signature = new Signature("GitFlow", "gitflow@local", DateTimeOffset.Now);
+        var prodResult = repo.Merge(releaseBranch, signature, new MergeOptions());
         
         if (prodResult.Status == MergeStatus.Conflicts)
         {
-            throw new InvalidOperationException("Merge conflicts with production branch");
+            throw new InvalidOperationException($"Merge conflicts detected with '{config.ProductionBranch}'. Please resolve manually.");
         }
 
-        // 2. Create tag
-        ConsoleHelper.PrintInfo($"Creating tag {config.VersionPrefix}{version}...");
+        // Step 4: Create tag
+        ConsoleHelper.PrintInfo($"Creating tag '{config.VersionPrefix}{version}'...");
         var tag = repo.Tags.Add($"{config.VersionPrefix}{version}", releaseBranch.Tip);
         
-        // 3. Push production and tag
+        // Step 5: Push production and tag to remote
         try
         {
             var remote = repo.Network.Remotes["origin"];
             if (remote != null)
             {
+                ConsoleHelper.PrintInfo($"Pushing '{config.ProductionBranch}' and tag to remote...");
                 repo.Network.Push(remote, $"refs/heads/{config.ProductionBranch}");
                 repo.Network.Push(remote, $"refs/tags/{config.VersionPrefix}{version}");
             }
@@ -44,21 +55,25 @@ public static class MergeService
             ConsoleHelper.PrintWarning($"Failed to push to remote: {ex.Message}");
         }
 
-        // 4. Merge to development
-        ConsoleHelper.PrintInfo("Merging to development branch...");
+        // Step 6: Merge to development
+        ConsoleHelper.PrintInfo($"Merging '{branchName}' to '{config.DevelopmentBranch}'...");
         LibGit2Sharp.Commands.Checkout(repo, config.DevelopmentBranch);
-        var devResult = repo.Merge(releaseBranch, new Signature("GitFlow", "gitflow@local", DateTimeOffset.Now), new MergeOptions());
+        var devResult = repo.Merge(releaseBranch, signature, new MergeOptions());
         
         if (devResult.Status == MergeStatus.Conflicts)
         {
-            ConsoleHelper.PrintWarning("Merge conflicts with development branch - resolve manually");
+            ConsoleHelper.PrintWarning($"Merge conflicts detected with '{config.DevelopmentBranch}'. Please resolve manually.");
+            return;
         }
 
-        // 5. Delete release branch
-        ConsoleHelper.PrintInfo("Deleting release branch...");
-        BranchService.DeleteBranch(repo, branchName);
+        // Step 7: Delete release branch (local and remote)
+        ConsoleHelper.PrintInfo($"Deleting release branch '{branchName}'...");
+        BranchService.DeleteBranch(repo, branchName, deleteRemote: true);
 
-        ConsoleHelper.PrintSuccess($"Release '{version}' finished successfully");
+        // Step 8: Ensure we're on development branch
+        LibGit2Sharp.Commands.Checkout(repo, config.DevelopmentBranch);
+
+        ConsoleHelper.PrintSuccess($"Release '{version}' finished successfully. Now on '{config.DevelopmentBranch}'.");
     }
 
     public static void FinishHotfix(Repository repo, string branchName, GitFlowConfig config)
@@ -67,29 +82,40 @@ public static class MergeService
         if (hotfixBranch == null)
             throw new InvalidOperationException($"Hotfix branch '{branchName}' not found");
 
+        ConsoleHelper.PrintInfo($"Starting finish process for hotfix '{branchName}'...");
+
         // Extract version from branch name
         var version = branchName.Replace(config.HotfixPrefix, "");
 
-        // 1. Merge to production
-        ConsoleHelper.PrintInfo("Merging to production branch...");
+        // Step 1: Verify working branch is up to date (blocking)
+        BranchService.VerifyWorkingBranchIsUpToDate(repo, branchName);
+
+        // Step 2: Ensure production and development branches are up to date
+        BranchService.EnsureBranchIsUpToDate(repo, config.ProductionBranch);
+        BranchService.EnsureBranchIsUpToDate(repo, config.DevelopmentBranch);
+
+        // Step 3: Merge to production
+        ConsoleHelper.PrintInfo($"Merging '{branchName}' to '{config.ProductionBranch}'...");
         LibGit2Sharp.Commands.Checkout(repo, config.ProductionBranch);
-        var prodResult = repo.Merge(hotfixBranch, new Signature("GitFlow", "gitflow@local", DateTimeOffset.Now), new MergeOptions());
+        var signature = new Signature("GitFlow", "gitflow@local", DateTimeOffset.Now);
+        var prodResult = repo.Merge(hotfixBranch, signature, new MergeOptions());
         
         if (prodResult.Status == MergeStatus.Conflicts)
         {
-            throw new InvalidOperationException("Merge conflicts with production branch");
+            throw new InvalidOperationException($"Merge conflicts detected with '{config.ProductionBranch}'. Please resolve manually.");
         }
 
-        // 2. Create tag
-        ConsoleHelper.PrintInfo($"Creating tag {config.VersionPrefix}{version}...");
+        // Step 4: Create tag
+        ConsoleHelper.PrintInfo($"Creating tag '{config.VersionPrefix}{version}'...");
         var tag = repo.Tags.Add($"{config.VersionPrefix}{version}", hotfixBranch.Tip);
         
-        // 3. Push production and tag
+        // Step 5: Push production and tag to remote
         try
         {
             var remote = repo.Network.Remotes["origin"];
             if (remote != null)
             {
+                ConsoleHelper.PrintInfo($"Pushing '{config.ProductionBranch}' and tag to remote...");
                 repo.Network.Push(remote, $"refs/heads/{config.ProductionBranch}");
                 repo.Network.Push(remote, $"refs/tags/{config.VersionPrefix}{version}");
             }
@@ -99,20 +125,24 @@ public static class MergeService
             ConsoleHelper.PrintWarning($"Failed to push to remote: {ex.Message}");
         }
 
-        // 4. Merge to development
-        ConsoleHelper.PrintInfo("Merging to development branch...");
+        // Step 6: Merge to development
+        ConsoleHelper.PrintInfo($"Merging '{branchName}' to '{config.DevelopmentBranch}'...");
         LibGit2Sharp.Commands.Checkout(repo, config.DevelopmentBranch);
-        var devResult = repo.Merge(hotfixBranch, new Signature("GitFlow", "gitflow@local", DateTimeOffset.Now), new MergeOptions());
+        var devResult = repo.Merge(hotfixBranch, signature, new MergeOptions());
         
         if (devResult.Status == MergeStatus.Conflicts)
         {
-            ConsoleHelper.PrintWarning("Merge conflicts with development branch - resolve manually");
+            ConsoleHelper.PrintWarning($"Merge conflicts detected with '{config.DevelopmentBranch}'. Please resolve manually.");
+            return;
         }
 
-        // 5. Delete hotfix branch
-        ConsoleHelper.PrintInfo("Deleting hotfix branch...");
-        BranchService.DeleteBranch(repo, branchName);
+        // Step 7: Delete hotfix branch (local and remote)
+        ConsoleHelper.PrintInfo($"Deleting hotfix branch '{branchName}'...");
+        BranchService.DeleteBranch(repo, branchName, deleteRemote: true);
 
-        ConsoleHelper.PrintSuccess($"Hotfix '{version}' finished successfully");
+        // Step 8: Ensure we're on development branch
+        LibGit2Sharp.Commands.Checkout(repo, config.DevelopmentBranch);
+
+        ConsoleHelper.PrintSuccess($"Hotfix '{version}' finished successfully. Now on '{config.DevelopmentBranch}'.");
     }
 }
