@@ -84,6 +84,21 @@ internal class FeatureFinishCommand : FinishCommandBase
 
         // Step 5: Ensure we're on development branch
         LibGit2Sharp.Commands.Checkout(repo, config.DevelopmentBranch);
+
+        // Step 6: Push development branch to remote
+        try
+        {
+            var remote = repo.Network.Remotes["origin"];
+            if (remote != null)
+            {
+                ConsoleHelper.PrintInfo($"Pushing '{config.DevelopmentBranch}' to remote...");
+                repo.Network.Push(remote, $"refs/heads/{config.DevelopmentBranch}");
+            }
+        }
+        catch (Exception ex)
+        {
+            ConsoleHelper.PrintWarning($"Failed to push '{config.DevelopmentBranch}' to remote: {ex.Message}");
+        }
         
         ConsoleHelper.PrintSuccess($"Feature '{branchName}' finished successfully and merged to '{config.DevelopmentBranch}'.");
     }

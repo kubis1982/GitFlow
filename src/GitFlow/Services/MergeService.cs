@@ -73,6 +73,21 @@ public static class MergeService
         // Step 8: Ensure we're on development branch
         LibGit2Sharp.Commands.Checkout(repo, config.DevelopmentBranch);
 
+        // Step 9: Push development branch to remote
+        try
+        {
+            var remote = repo.Network.Remotes["origin"];
+            if (remote != null)
+            {
+                ConsoleHelper.PrintInfo($"Pushing '{config.DevelopmentBranch}' to remote...");
+                repo.Network.Push(remote, $"refs/heads/{config.DevelopmentBranch}");
+            }
+        }
+        catch (Exception ex)
+        {
+            ConsoleHelper.PrintWarning($"Failed to push '{config.DevelopmentBranch}' to remote: {ex.Message}");
+        }
+
         ConsoleHelper.PrintSuccess($"Release '{version}' finished successfully. Now on '{config.DevelopmentBranch}'.");
     }
 
@@ -142,6 +157,21 @@ public static class MergeService
 
         // Step 8: Ensure we're on development branch
         LibGit2Sharp.Commands.Checkout(repo, config.DevelopmentBranch);
+
+        // Step 9: Push development branch to remote
+        try
+        {
+            var remote = repo.Network.Remotes["origin"];
+            if (remote != null)
+            {
+                ConsoleHelper.PrintInfo($"Pushing '{config.DevelopmentBranch}' to remote...");
+                repo.Network.Push(remote, $"refs/heads/{config.DevelopmentBranch}");
+            }
+        }
+        catch (Exception ex)
+        {
+            ConsoleHelper.PrintWarning($"Failed to push '{config.DevelopmentBranch}' to remote: {ex.Message}");
+        }
 
         ConsoleHelper.PrintSuccess($"Hotfix '{version}' finished successfully. Now on '{config.DevelopmentBranch}'.");
     }
