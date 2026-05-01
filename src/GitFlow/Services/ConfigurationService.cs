@@ -1,6 +1,5 @@
 using LibGit2Sharp;
 using GitFlow.Models;
-using System.Diagnostics;
 
 namespace GitFlow.Services;
 
@@ -10,13 +9,14 @@ public static class ConfigurationService
     {
         try
         {
+            var repo = GitRepositoryService.GetRepository();
+            
             if (global)
             {
-                return ReadGlobalConfig();
+                return ReadConfig(repo, ConfigurationLevel.Global);
             }
 
-            var repo = GitRepositoryService.GetRepository();
-            return ReadLocalConfig(repo);
+            return ReadConfig(repo, ConfigurationLevel.Local);
         }
         catch
         {
@@ -24,12 +24,12 @@ public static class ConfigurationService
         }
     }
 
-    public static GitFlowConfig? ReadLocalConfig(Repository repo)
+    public static GitFlowConfig? ReadConfig(Repository repo, ConfigurationLevel configurationLevel)
     {
         try
         {
-            var production = repo.Config.Get<string>("gitflow.production")?.Value;
-            var development = repo.Config.Get<string>("gitflow.development")?.Value;
+            var production = repo.Config.Get<string>("gitflow.production", configurationLevel)?.Value;
+            var development = repo.Config.Get<string>("gitflow.development", configurationLevel)?.Value;
 
             if (production == null || development == null)
                 return null;
@@ -38,42 +38,13 @@ public static class ConfigurationService
             {
                 ProductionBranch = production,
                 DevelopmentBranch = development,
-                FeaturePrefix = repo.Config.Get<string>("gitflow.prefix.feature")?.Value ?? "feature/",
-                ReleasePrefix = repo.Config.Get<string>("gitflow.prefix.release")?.Value ?? "release/",
-                HotfixPrefix = repo.Config.Get<string>("gitflow.prefix.hotfix")?.Value ?? "hotfix/",
-                BugfixPrefix = repo.Config.Get<string>("gitflow.prefix.bugfix")?.Value ?? "bugfix/",
-                VersionPrefix = repo.Config.Get<string>("gitflow.prefix.version")?.Value ?? "v",
-                MergeStrategy = repo.Config.Get<string>("gitflow.merge.strategy")?.Value ?? "--no-ff",
-                IsGlobal = false
-            };
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    public static GitFlowConfig? ReadGlobalConfig()
-    {
-        try
-        {
-            var production = GetGitConfigValue("gitflow.production", global: true);
-            var development = GetGitConfigValue("gitflow.development", global: true);
-
-            if (production == null || development == null)
-                return null;
-
-            return new GitFlowConfig
-            {
-                ProductionBranch = production,
-                DevelopmentBranch = development,
-                FeaturePrefix = GetGitConfigValue("gitflow.prefix.feature", global: true) ?? "feature/",
-                ReleasePrefix = GetGitConfigValue("gitflow.prefix.release", global: true) ?? "release/",
-                HotfixPrefix = GetGitConfigValue("gitflow.prefix.hotfix", global: true) ?? "hotfix/",
-                BugfixPrefix = GetGitConfigValue("gitflow.prefix.bugfix", global: true) ?? "bugfix/",
-                VersionPrefix = GetGitConfigValue("gitflow.prefix.version", global: true) ?? "v",
-                MergeStrategy = GetGitConfigValue("gitflow.merge.strategy", global: true) ?? "--no-ff",
-                IsGlobal = true
+                FeaturePrefix = repo.Config.Get<string>("gitflow.prefix.feature", configurationLevel)?.Value ?? "feature/",
+                ReleasePrefix = repo.Config.Get<string>("gitflow.prefix.release", configurationLevel)?.Value ?? "release/",
+                HotfixPrefix = repo.Config.Get<string>("gitflow.prefix.hotfix", configurationLevel)?.Value ?? "hotfix/",
+                BugfixPrefix = repo.Config.Get<string>("gitflow.prefix.bugfix", configurationLevel)?.Value ?? "bugfix/",
+                VersionPrefix = repo.Config.Get<string>("gitflow.prefix.version", configurationLevel)?.Value ?? "",
+                MergeStrategy = repo.Config.Get<string>("gitflow.merge.strategy", configurationLevel)?.Value ?? "--no-ff",
+                IsGlobal = configurationLevel == ConfigurationLevel.Global
             };
         }
         catch
@@ -91,14 +62,15 @@ public static class ConfigurationService
     {
         try
         {
+            var repo = GitRepositoryService.GetRepository();
+            
             if (global)
             {
-                WriteGlobalConfig(config);
+                WriteConfig(repo, config, ConfigurationLevel.Global);
             }
             else
             {
-                var repo = GitRepositoryService.GetRepository();
-                WriteLocalConfig(repo, config);
+                WriteConfig(repo, config, ConfigurationLevel.Local);
             }
         }
         catch (Exception ex)
@@ -107,95 +79,35 @@ public static class ConfigurationService
         }
     }
 
-    private static void WriteLocalConfig(Repository repo, GitFlowConfig config)
+    private static void WriteConfig(Repository repo, GitFlowConfig config, ConfigurationLevel configurationLevel)
     {
-        repo.Config.Set("gitflow.production", config.ProductionBranch);
-        repo.Config.Set("gitflow.development", config.DevelopmentBranch);
-        repo.Config.Set("gitflow.prefix.feature", config.FeaturePrefix);
-        repo.Config.Set("gitflow.prefix.release", config.ReleasePrefix);
-        repo.Config.Set("gitflow.prefix.hotfix", config.HotfixPrefix);
-        repo.Config.Set("gitflow.prefix.bugfix", config.BugfixPrefix);
-        repo.Config.Set("gitflow.prefix.version", config.VersionPrefix);
-        repo.Config.Set("gitflow.merge.strategy", config.MergeStrategy);
-    }
-
-    private static void WriteGlobalConfig(GitFlowConfig config)
-    {
-        SetGitConfigValue("gitflow.production", config.ProductionBranch, global: true);
-        SetGitConfigValue("gitflow.development", config.DevelopmentBranch, global: true);
-        SetGitConfigValue("gitflow.prefix.feature", config.FeaturePrefix, global: true);
-        SetGitConfigValue("gitflow.prefix.release", config.ReleasePrefix, global: true);
-        SetGitConfigValue("gitflow.prefix.hotfix", config.HotfixPrefix, global: true);
-        SetGitConfigValue("gitflow.prefix.bugfix", config.BugfixPrefix, global: true);
-        SetGitConfigValue("gitflow.prefix.version", config.VersionPrefix, global: true);
-        SetGitConfigValue("gitflow.merge.strategy", config.MergeStrategy, global: true);
+        repo.Config.Set("gitflow.production", config.ProductionBranch, configurationLevel);
+        repo.Config.Set("gitflow.development", config.DevelopmentBranch, configurationLevel);
+        repo.Config.Set("gitflow.prefix.feature", config.FeaturePrefix, configurationLevel);
+        repo.Config.Set("gitflow.prefix.release", config.ReleasePrefix, configurationLevel);
+        repo.Config.Set("gitflow.prefix.hotfix", config.HotfixPrefix, configurationLevel);
+        repo.Config.Set("gitflow.prefix.bugfix", config.BugfixPrefix, configurationLevel);
+        
+        // Handle version prefix - remove if empty, set if not
+        if (string.IsNullOrEmpty(config.VersionPrefix))
+            repo.Config.Unset("gitflow.prefix.version", configurationLevel);
+        else
+            repo.Config.Set("gitflow.prefix.version", config.VersionPrefix, configurationLevel);
+            
+        repo.Config.Set("gitflow.merge.strategy", config.MergeStrategy, configurationLevel);
     }
 
     public static GitFlowConfig GetOrCreateConfig(bool global = false)
     {
         var repo = GitRepositoryService.GetRepository();
-        var local = ReadLocalConfig(repo);
+        var local = ReadConfig(repo, ConfigurationLevel.Local);
         if (local != null)
             return local;
 
-        var globalConfig = ReadGlobalConfig();
+        var globalConfig = ReadConfig(repo, ConfigurationLevel.Global);
         if (globalConfig != null)
             return globalConfig;
 
         return new GitFlowConfig();
-    }
-
-    private static string? GetGitConfigValue(string key, bool global = false)
-    {
-        try
-        {
-            var args = global ? $"config --global --get {key}" : $"config --get {key}";
-            var process = new Process
-            {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = "git",
-                    Arguments = args,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                }
-            };
-            
-            process.Start();
-            var output = process.StandardOutput.ReadToEnd().Trim();
-            process.WaitForExit();
-            
-            return string.IsNullOrEmpty(output) ? null : output;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private static void SetGitConfigValue(string key, string value, bool global = false)
-    {
-        var args = global ? $"config --global {key} {value}" : $"config {key} {value}";
-        var process = new Process
-        {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = "git",
-                Arguments = args,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardError = true
-            }
-        };
-        
-        process.Start();
-        process.WaitForExit();
-        
-        if (process.ExitCode != 0)
-        {
-            throw new InvalidOperationException($"Failed to set git config {key}");
-        }
     }
 }

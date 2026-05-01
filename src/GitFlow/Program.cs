@@ -16,6 +16,7 @@ Parameters are optional and contain default values.
 ");
 
 rootCommand.Add(new InitCommand());
+rootCommand.Add(new ConfigCommand());
 rootCommand.Add(new FeatureCommand());
 rootCommand.Add(new BugfixCommand());
 rootCommand.Add(new ReleaseCommand());
