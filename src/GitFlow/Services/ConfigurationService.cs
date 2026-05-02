@@ -24,7 +24,7 @@ public static class ConfigurationService
         }
     }
 
-    public static GitFlowConfig? ReadConfig(Repository repo, ConfigurationLevel configurationLevel)
+    private static GitFlowConfig? ReadConfig(Repository repo, ConfigurationLevel configurationLevel)
     {
         try
         {
@@ -95,19 +95,5 @@ public static class ConfigurationService
             repo.Config.Set("gitflow.prefix.version", config.VersionPrefix, configurationLevel);
             
         repo.Config.Set("gitflow.merge.strategy", config.MergeStrategy, configurationLevel);
-    }
-
-    public static GitFlowConfig GetOrCreateConfig(bool global = false)
-    {
-        var repo = GitRepositoryService.GetRepository();
-        var local = ReadConfig(repo, ConfigurationLevel.Local);
-        if (local != null)
-            return local;
-
-        var globalConfig = ReadConfig(repo, ConfigurationLevel.Global);
-        if (globalConfig != null)
-            return globalConfig;
-
-        return new GitFlowConfig();
     }
 }

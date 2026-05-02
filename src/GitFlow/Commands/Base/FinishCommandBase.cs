@@ -25,7 +25,12 @@ internal abstract class FinishCommandBase : Command
                 }
 
                 var repo = GitRepositoryService.GetRepository();
-                var config = ConfigurationService.GetOrCreateConfig();
+                var config = ConfigurationService.ReadConfig(false);
+                if (config == null)
+                {
+                    ConsoleHelper.PrintError("GitFlow is not initialized in this repository. Run 'gitflow config init' first.");
+                    return;
+                }
                 var branchName = GetBranchPrefix(config) + name;
 
                 PerformFinish(repo, branchName, config, branchType);
