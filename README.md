@@ -37,29 +37,52 @@ dotnet run --project src/GitFlow
 
 ### Initialize GitFlow
 
-Initialize GitFlow with interactive prompts:
+GitFlow must be initialized in each repository before use. The initialization process has three scenarios:
+
+#### Scenario 1: Initialize with Global Template
+
+If you have a global template configured, initialize with defaults:
 
 ```bash
-gitflow init [options]
+gitflow config init
 ```
 
-Options:
-- `-g, --global` - Store configuration globally instead of locally
-- `-f, --force` - Overwrite existing configuration
+This displays the global template configuration and asks for confirmation:
+- Answer `Y` to accept all settings
+- Answer `n` to customize individual settings
 
-The command will interactively ask for:
+#### Scenario 2: Initialize from Scratch
+
+If no global template exists, configure all settings interactively:
+
+```bash
+gitflow config init
+```
+
+You'll be prompted for:
 1. Production branch (default: main)
 2. Development branch (default: develop)
 3. Feature branch prefix (default: feature/)
 4. Release branch prefix (default: release/)
 5. Hotfix branch prefix (default: hotfix/)
 6. Bugfix branch prefix (default: bugfix/)
-7. Version tag prefix (default: v)
+7. Version tag prefix (default: v or none)
 8. Merge strategy (default: --no-ff)
+
+#### Scenario 3: Reconfigure Existing Setup
+
+To override existing local configuration:
+
+```bash
+gitflow config init -f
+```
+
+Options:
+- `-f, --force` - Overwrite existing local configuration
 
 Example session:
 ```bash
-$ gitflow init
+$ gitflow config init
 
 GitFlow Configuration
 
@@ -72,11 +95,21 @@ Feature branch prefix [feature/]:
 Release branch prefix [release/]: 
 Hotfix branch prefix [hotfix/]: 
 Bugfix branch prefix [bugfix/]: 
-Version tag prefix [v]: 
+
+Version Prefix
+
+Select version tag prefix:
+  1) <none> (e.g., 1.0.0)
+  2) v (e.g., v1.0.0)
+Choice [1]: 2
 
 Merge Strategy
 
-Merge strategy [--no-ff]: 
+Select merge strategy:
+  1) --no-ff (recommended - always create merge commit)
+  2) --ff (fast-forward if possible)
+  3) --ff-only (only fast-forward, fail otherwise)
+Choice [1]: 
 
 ✓ GitFlow initialized (local config)
   Production branch: main
@@ -89,9 +122,25 @@ Merge strategy [--no-ff]:
   Merge strategy: --no-ff
 ```
 
-To use global configuration:
+### Configure Global Template
+
+Create a global configuration template for reuse across repositories:
+
 ```bash
-gitflow init -g
+gitflow config template
+```
+
+This configures:
+1. Production branch (default: main)
+2. Development branch (default: develop)
+3. Version tag prefix (v or none)
+4. Merge strategy (--no-ff, --ff, or --ff-only)
+
+**Note**: Branch prefixes are fixed as `feature/`, `release/`, `hotfix/`, `bugfix/` in the template.
+
+To override existing global template:
+```bash
+gitflow config template -f
 ```
 
 ### Feature Branches
@@ -227,10 +276,12 @@ gitflow hotfix finish 1.0.1  # Creates tag v1.0.1
 
 ## Configuration
 
-GitFlow configuration is stored in git config (locally or globally).
+GitFlow requires local configuration in each repository. Configuration is stored in git config.
 
-Local configuration (`.git/config`):
-```
+### Local Configuration
+
+Local configuration is stored in `.git/config`:
+```ini
 [gitflow]
     production = main
     development = develop
@@ -242,10 +293,21 @@ Local configuration (`.git/config`):
     merge.strategy = --no-ff
 ```
 
-Global configuration (`~/.gitconfig`):
+**Important**: All GitFlow commands (start, finish, publish, etc.) require local configuration. Run `gitflow config init` first.
+
+### Global Template
+
+Global template is stored in `~/.gitconfig` and used as defaults during `gitflow config init`:
 ```bash
-gitflow init -g  # Store globally
+gitflow config template  # Create global template
 ```
+
+The template simplifies initialization across multiple repositories by providing default values.
+
+### Configuration Priority
+
+1. **Local** configuration (`.git/config`) - used by all GitFlow commands
+2. **Global** template (`~/.gitconfig`) - used as defaults during initialization
 
 ## Requirements
 
