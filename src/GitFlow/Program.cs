@@ -6,16 +6,14 @@ RootCommand rootCommand = new(@"GitFlow - Git workflow management tool
 
 Manages git branches according to the GitFlow schema.
 
-Configuration is stored in the git configuration file (locally or globally).
 
 INITIALIZATION:
 
-gitflow init
+gitflow config init
 
 Parameters are optional and contain default values.
 ");
 
-rootCommand.Add(new InitCommand());
 rootCommand.Add(new ConfigCommand());
 rootCommand.Add(new FeatureCommand());
 rootCommand.Add(new BugfixCommand());
