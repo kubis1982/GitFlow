@@ -25,7 +25,7 @@ public static class GitRepositoryService
         }
         catch (RepositoryNotFoundException)
         {
-            throw new InvalidOperationException("Not a git repository. Run 'gitflow init' first.");
+            throw new InvalidOperationException("Not a git repository. Run 'gitflow config init' first.");
         }
     }
 
