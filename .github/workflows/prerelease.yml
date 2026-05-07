@@ -1,0 +1,81 @@
+name: Prerelease (NuGet only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prerelease:
+    name: Build and publish prerelease NuGet package
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version from Directory.Build.props
+        id: get_version
+        shell: pwsh
+        run: |
+          [xml]$props = Get-Content Directory.Build.props
+          $baseVersion = $props.Project.PropertyGroup.Version
+          Write-Host "Base version from Directory.Build.props: $baseVersion"
+          
+          # Generate prerelease version with timestamp
+          $timestamp = Get-Date -Format "yyyyMMddHHmmss"
+          $shortSha = git rev-parse --short HEAD
+          $prereleaseVersion = "$baseVersion-dev.$timestamp+$shortSha"
+          
+          Write-Output "version=$prereleaseVersion" >> $env:GITHUB_OUTPUT
+          Write-Host "Prerelease version: $prereleaseVersion"
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Pack prerelease NuGet package
+        shell: pwsh
+        run: |
+          $version = '${{ steps.get_version.outputs.version }}'
+          Write-Host "Packing prerelease NuGet package version $version"
+          dotnet pack src/GitFlow/GitFlow.csproj `
+            --configuration Release `
+            -p:Version=$version `
+            --output ./artifacts/nuget
+
+      - name: Push prerelease NuGet package
+        shell: pwsh
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          $version = '${{ steps.get_version.outputs.version }}'
+          $packageFile = "./artifacts/nuget/Kubis1982.GitFlow.$version.nupkg"
+          if (Test-Path $packageFile -PathType Leaf) {
+            Write-Host "Pushing prerelease NuGet package to nuget.org: $packageFile"
+            dotnet nuget push $packageFile `
+              --api-key $env:NUGET_API_KEY `
+              --source https://api.nuget.org/v3/index.json `
+              --skip-duplicate
+          } else {
+            Write-Error "NuGet package file not found: $packageFile"
+            exit 1
+          }
+
+      - name: Summary
+        shell: pwsh
+        run: |
+          $version = '${{ steps.get_version.outputs.version }}'
+          Write-Host "✓ Prerelease package published: Kubis1982.GitFlow $version"
+          Write-Host ""
+          Write-Host "Install with:"
+          Write-Host "  dotnet tool install --global Kubis1982.GitFlow --version $version"

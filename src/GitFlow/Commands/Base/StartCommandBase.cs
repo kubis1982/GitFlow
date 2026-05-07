@@ -40,7 +40,38 @@ internal abstract class StartCommandBase : Command
                     return;
                 }
 
+                // Execute PRE hook (before branch creation)
+                var preHookName = $"gitflow-{branchType}-start-pre.cs";
+                if (HookService.HookExists(repo, preHookName))
+                {
+                    var preResult = HookService.ExecuteHook(repo, preHookName, branchName);
+                    if (preResult is { Success: false })
+                    {
+                        ConsoleHelper.PrintError($"Pre-hook failed. Aborting {branchType} start.");
+                        return;
+                    }
+                }
+
                 BranchService.CreateBranch(repo, branchName, sourceBranch);
+
+                // Execute POST hook (after branch creation)
+                var postHookName = $"gitflow-{branchType}-start-post.cs";
+                if (HookService.HookExists(repo, postHookName))
+                {
+                    var postResult = HookService.ExecuteHook(repo, postHookName, branchName);
+                    if (postResult is { Success: false })
+                    {
+                        ConsoleHelper.PrintError($"Post-hook failed. Branch '{branchName}' was created but post-hook returned an error.");
+                        return;
+                    }
+
+                    // Commit any changes made by the post-hook
+                    if (postResult is { Success: true })
+                    {
+                        HookService.CommitHookChanges(repo, postHookName, branchName);
+                    }
+                }
+
                 ConsoleHelper.PrintSuccess($"{char.ToUpper(branchType[0]) + branchType.Substring(1)} branch '{branchName}' created");
             }
             catch (Exception ex)

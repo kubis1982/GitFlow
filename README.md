@@ -16,6 +16,11 @@ Update to the latest version:
 dotnet tool update --global Kubis1982.GitFlow
 ```
 
+Install specific prerelease version (for testing):
+```bash
+dotnet tool install --global Kubis1982.GitFlow --version 2.0.0-dev.20260507163000+a1b2c3d
+```
+
 Uninstall:
 ```bash
 dotnet tool uninstall --global Kubis1982.GitFlow
@@ -309,12 +314,104 @@ The template simplifies initialization across multiple repositories by providing
 1. **Local** configuration (`.git/config`) - used by all GitFlow commands
 2. **Global** template (`~/.gitconfig`) - used as defaults during initialization
 
+## Hooks
+
+GitFlow supports C# hooks that can be executed at various stages of the workflow. Hooks are optional scripts that automate custom actions during GitFlow operations.
+
+### Available Hooks
+
+#### Release Hooks
+- **gitflow-release-start-pre.cs** - Executed BEFORE creating a release branch
+- **gitflow-release-start-post.cs** - Executed AFTER creating a release branch
+
+#### Hotfix Hooks
+- **gitflow-hotfix-start-pre.cs** - Executed BEFORE creating a hotfix branch
+- **gitflow-hotfix-start-post.cs** - Executed AFTER creating a hotfix branch
+
+#### Feature & Bugfix Hooks
+- **gitflow-feature-start-pre.cs** / **gitflow-feature-start-post.cs** - Feature branch hooks
+- **gitflow-bugfix-start-pre.cs** / **gitflow-bugfix-start-post.cs** - Bugfix branch hooks
+
+All hook types follow the same pattern and receive the full branch name as argument.
+
+### Hook Installation
+
+1. Create `.git/hooks/` directory if it doesn't exist
+2. Copy hook scripts from `docs/hooks/` to `.git/hooks/`
+3. Customize for your project needs
+
+Example:
+```bash
+# Copy example hooks
+cp docs/hooks/gitflow-release-start-post.cs .git/hooks/
+cp docs/hooks/gitflow-hotfix-start-post.cs .git/hooks/
+```
+
+### Example: Auto-update Version
+
+The provided example hooks automatically update `Directory.Build.props` when creating release or hotfix branches:
+
+```csharp
+#!/usr/bin/env dotnet
+var branchName = args[0]; // e.g., "release/1.0.0"
+var version = branchName.Substring(branchName.LastIndexOf('/') + 1);
+
+var content = File.ReadAllText("Directory.Build.props");
+var updated = System.Text.RegularExpressions.Regex.Replace(
+    content, 
+    @"<Version>.*?</Version>", 
+    $"<Version>{version}</Version>"
+);
+File.WriteAllText("Directory.Build.props", updated);
+return 0;
+```
+
+### Hook Behavior
+
+- **Parameters**: Hooks receive the full branch name (e.g., `release/1.0.0`)
+- **Exit codes**: Return 0 for success, non-zero to abort operation
+- **Auto-commit**: POST hooks' file changes are automatically committed by GitFlow
+- **Optional**: Hooks are optional - GitFlow works without them
+- **Per-repository**: Hooks are stored in `.git/hooks/` and not committed to version control
+
+For complete hook documentation and examples, see [docs/hooks/README.md](docs/hooks/README.md).
+
 ## Requirements
 
 - .NET 10.0
 - Git repository
 - LibGit2Sharp
 - System.CommandLine
+
+## CI/CD
+
+### Release Workflow
+Triggered by pushing a version tag (e.g., `v2.0.0`):
+- Builds the project
+- Packs NuGet package with version from tag
+- Publishes single-file executable (Windows x64)
+- Pushes package to NuGet.org
+- Creates GitHub Release with artifacts
+
+Example:
+```bash
+git tag v2.0.0
+git push origin v2.0.0
+```
+
+### Prerelease Workflow
+Triggered by push to `develop` branch or manually:
+- Builds the project
+- Packs NuGet package with prerelease version: `{base-version}-dev.{timestamp}+{sha}`
+- Pushes package to NuGet.org (prerelease)
+- **No GitHub Release created**
+
+Version format: `2.0.0-dev.20260507163000+a1b2c3d`
+
+Install prerelease:
+```bash
+dotnet tool install --global Kubis1982.GitFlow --version 2.0.0-dev.*
+```
 
 ## License
 
