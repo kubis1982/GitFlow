@@ -16,6 +16,11 @@ Update to the latest version:
 dotnet tool update --global Kubis1982.GitFlow
 ```
 
+Install specific prerelease version (for testing):
+```bash
+dotnet tool install --global Kubis1982.GitFlow --version 2.0.0-dev.20260507163000+a1b2c3d
+```
+
 Uninstall:
 ```bash
 dotnet tool uninstall --global Kubis1982.GitFlow
@@ -377,6 +382,36 @@ For complete hook documentation and examples, see [docs/hooks/README.md](docs/ho
 - Git repository
 - LibGit2Sharp
 - System.CommandLine
+
+## CI/CD
+
+### Release Workflow
+Triggered by pushing a version tag (e.g., `v2.0.0`):
+- Builds the project
+- Packs NuGet package with version from tag
+- Publishes single-file executable (Windows x64)
+- Pushes package to NuGet.org
+- Creates GitHub Release with artifacts
+
+Example:
+```bash
+git tag v2.0.0
+git push origin v2.0.0
+```
+
+### Prerelease Workflow
+Triggered by push to `develop` branch or manually:
+- Builds the project
+- Packs NuGet package with prerelease version: `{base-version}-dev.{timestamp}+{sha}`
+- Pushes package to NuGet.org (prerelease)
+- **No GitHub Release created**
+
+Version format: `2.0.0-dev.20260507163000+a1b2c3d`
+
+Install prerelease:
+```bash
+dotnet tool install --global Kubis1982.GitFlow --version 2.0.0-dev.*
+```
 
 ## License
 
