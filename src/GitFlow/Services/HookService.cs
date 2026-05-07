@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.IO.Compression;
+using System.Net.Http;
 using GitFlow.Models;
 using GitFlow.Utilities;
 using LibGit2Sharp;
@@ -7,31 +9,17 @@ namespace GitFlow.Services;
 
 public static class HookService
 {
-    /// <summary>
-    /// Gets the path to the docs/hooks directory
-    /// First tries the tool installation directory, then falls back to repository root (for development)
-    /// </summary>
-    /// <param name="repo">Git repository</param>
-    /// <returns>Full path to docs/hooks directory</returns>
-    private static string GetDocsHooksPath(Repository repo)
-    {
-        // Try tool installation directory first (when installed via NuGet)
-        var appDir = AppContext.BaseDirectory;
-        
-        if (!string.IsNullOrEmpty(appDir))
-        {
-            var toolHooksPath = Path.Combine(appDir, "docs", "hooks");
-            if (Directory.Exists(toolHooksPath))
-            {
-                return toolHooksPath;
-            }
-        }
-        
-        // Fallback to repository root (for development/running from source)
-        var repoRoot = repo.Info.WorkingDirectory;
-        return Path.Combine(repoRoot, "docs", "hooks");
-    }
+    private const string GitHubRawBaseUrl = "https://github.com/kubis1982/GitFlow/raw/main/docs/hooks";
 
+    /// <summary>
+    /// Gets the URL to download the ZIP file for a specific template from GitHub
+    /// </summary>
+    /// <param name="templateName">Template name: "dotnet" or "nodejs"</param>
+    /// <returns>Full URL to the ZIP file</returns>
+    private static string GetTemplateZipUrl(string templateName)
+    {
+        return $"{GitHubRawBaseUrl}/{templateName}.zip";
+    }
     /// <summary>
     /// Gets the path to the .git/hooks directory
     /// </summary>
@@ -54,127 +42,96 @@ public static class HookService
     }
 
     /// <summary>
-    /// Gets the subdirectory and hook filenames for a specific template
+    /// Registers hooks from a template by downloading ZIP from GitHub
     /// </summary>
+    /// <param name="repo">Git repository</param>
     /// <param name="templateName">Template name: "dotnet" or "nodejs"</param>
-    /// <returns>Tuple with subdirectory name and array of hook filenames</returns>
-    private static (string subdirectory, string[] hookFiles) GetTemplateFiles(string templateName)
+    /// <param name="overwrite">Whether to overwrite existing hooks</param>
+    /// <returns>HookRegistrationResult with statistics</returns>
+    public static HookRegistrationResult RegisterTemplate(Repository repo, string templateName, bool overwrite = false)
     {
-        var hookFiles = new[]
-        {
-            "gitflow-release-start-post.cs",
-            "gitflow-hotfix-start-post.cs"
-        };
+        var result = new HookRegistrationResult();
 
-        if (templateName.Equals("dotnet", StringComparison.OrdinalIgnoreCase))
+        var zipUrl = GetTemplateZipUrl(templateName);
+        var hooksPath = GetGitHooksPath(repo);
+        
+        // Ensure .git/hooks directory exists
+        if (!Directory.Exists(hooksPath))
         {
-            return ("dotnet", hookFiles);
+            Directory.CreateDirectory(hooksPath);
         }
 
-        if (templateName.Equals("nodejs", StringComparison.OrdinalIgnoreCase))
-        {
-            return ("nodejs", hookFiles);
-        }
-
-        throw new ArgumentException($"Unknown template: {templateName}. Available templates: dotnet, nodejs");
-    }
-
-    /// <summary>
-    /// Validates that a hook file exists and contains the required "version" marker
-    /// </summary>
-    /// <param name="sourceFilePath">Path to the hook file in docs/hooks</param>
-    /// <returns>True if valid, false otherwise</returns>
-    private static bool ValidateHookFile(string sourceFilePath)
-    {
-        if (!File.Exists(sourceFilePath))
-        {
-            return false;
-        }
+        ConsoleHelper.PrintInfo($"Downloading hooks from {zipUrl}...");
 
         try
         {
-            var content = File.ReadAllText(sourceFilePath);
-            return content.Contains("version", StringComparison.OrdinalIgnoreCase);
-        }
-        catch
-        {
-            return false;
-        }
-    }
+            // Download ZIP file
+            using var httpClient = new HttpClient();
+            httpClient.Timeout = TimeSpan.FromSeconds(30);
+            var zipBytes = httpClient.GetByteArrayAsync(zipUrl).Result;
 
-    /// <summary>
-    /// Copies a hook file from docs/hooks to .git/hooks
-    /// </summary>
-    /// <param name="sourceFilePath">Source file path</param>
-    /// <param name="targetFilePath">Target file path</param>
-    private static void CopyHookFile(string sourceFilePath, string targetFilePath)
-    {
-        var targetDir = Path.GetDirectoryName(targetFilePath);
-        if (!Directory.Exists(targetDir))
-        {
-            Directory.CreateDirectory(targetDir!);
-        }
+            // Extract to temporary directory first
+            var tempDir = Path.Combine(Path.GetTempPath(), $"gitflow-hooks-{Guid.NewGuid()}");
+            Directory.CreateDirectory(tempDir);
 
-        File.Copy(sourceFilePath, targetFilePath, overwrite: false);
-    }
-
-    /// <summary>
-    /// Registers hooks from a template
-    /// </summary>
-    /// <param name="repo">Git repository</param>
-    /// <param name="templateName">Template name</param>
-    /// <returns>HookRegistrationResult with statistics</returns>
-    public static HookRegistrationResult RegisterTemplate(Repository repo, string templateName)
-    {
-        var result = new HookRegistrationResult();
-        var docsHooksPath = GetDocsHooksPath(repo);
-
-        if (!Directory.Exists(docsHooksPath))
-        {
-            throw new DirectoryNotFoundException($"Hook templates directory not found: {docsHooksPath}");
-        }
-
-        var (subdirectory, hookFiles) = GetTemplateFiles(templateName);
-        var templatePath = Path.Combine(docsHooksPath, subdirectory);
-
-        if (!Directory.Exists(templatePath))
-        {
-            throw new DirectoryNotFoundException($"Template directory not found: {templatePath}");
-        }
-
-        foreach (var hookFile in hookFiles)
-        {
-            var sourceFile = Path.Combine(templatePath, hookFile);
-            var targetFile = GetHookPath(repo, hookFile);
-
-            // Validate source file
-            if (!ValidateHookFile(sourceFile))
-            {
-                ConsoleHelper.PrintError($"✗ {hookFile}: validation failed (file not found or missing 'version' marker)");
-                result.Failed++;
-                continue;
-            }
-
-            // Check if target already exists
-            if (File.Exists(targetFile))
-            {
-                ConsoleHelper.PrintInfo($"⊘ {hookFile}: already exists, skipping");
-                result.Skipped++;
-                continue;
-            }
-
-            // Copy file
             try
             {
-                CopyHookFile(sourceFile, targetFile);
-                ConsoleHelper.PrintSuccess($"✓ {hookFile}: registered");
-                result.Copied++;
+                var tempZipPath = Path.Combine(tempDir, $"{templateName}.zip");
+                File.WriteAllBytes(tempZipPath, zipBytes);
+
+                // Extract ZIP
+                ZipFile.ExtractToDirectory(tempZipPath, tempDir, overwriteFiles: true);
+
+                // Copy hook files to .git/hooks
+                var extractedFiles = Directory.GetFiles(tempDir, "*.cs", SearchOption.AllDirectories);
+                
+                foreach (var sourceFile in extractedFiles)
+                {
+                    var fileName = Path.GetFileName(sourceFile);
+                    var targetFile = Path.Combine(hooksPath, fileName);
+
+                    // Check if target already exists and we're not forcing overwrite
+                    if (File.Exists(targetFile) && !overwrite)
+                    {
+                        ConsoleHelper.PrintInfo($"⊘ {fileName}: already exists, skipping");
+                        result.Skipped++;
+                        continue;
+                    }
+
+                    // Copy file
+                    try
+                    {
+                        File.Copy(sourceFile, targetFile, overwrite: overwrite);
+                        ConsoleHelper.PrintSuccess($"✓ {fileName}: applied");
+                        result.Copied++;
+                    }
+                    catch (Exception ex)
+                    {
+                        ConsoleHelper.PrintError($"✗ {fileName}: failed to copy ({ex.Message})");
+                        result.Failed++;
+                    }
+                }
             }
-            catch (Exception ex)
+            finally
             {
-                ConsoleHelper.PrintError($"✗ {hookFile}: failed to copy ({ex.Message})");
-                result.Failed++;
+                // Clean up temporary directory
+                if (Directory.Exists(tempDir))
+                {
+                    Directory.Delete(tempDir, recursive: true);
+                }
             }
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new Exception($"Failed to download hooks from GitHub: {ex.Message}. Please check your internet connection.", ex);
+        }
+        catch (TaskCanceledException)
+        {
+            throw new Exception("Download timeout. Please check your internet connection and try again.");
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Failed to register hooks: {ex.Message}", ex);
         }
 
         return result;

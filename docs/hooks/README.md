@@ -50,26 +50,45 @@ dotnet .git/hooks/[hookname].cs [branch-name]
 
 ## Installing Hook Templates
 
-Use the `gitflow hooks register` command to automatically install hook templates:
+GitFlow provides pre-built hook templates that can be installed with a single command:
 
 ```bash
-# For .NET projects
-gitflow hooks register dotnet
+# For .NET projects (updates Directory.Build.props)
+gitflow hooks apply dotnet
 
-# For Node.js/npm projects
-gitflow hooks register nodejs
+# For Node.js/npm projects (updates package.json)
+gitflow hooks apply nodejs
+
+# Force overwrite existing hooks
+gitflow hooks apply dotnet --force
 ```
 
 This command:
-- Copies hook templates from `docs/hooks/{template}/` to `.git/hooks/`
-- Validates each hook (must contain "version" marker)
-- Skips existing hooks (won't overwrite)
-- Shows summary of registered/skipped/failed hooks
+- Downloads the latest hook templates from GitHub (`https://github.com/kubis1982/GitFlow/raw/main/docs/hooks/{template}.zip`)
+- Extracts hooks to `.git/hooks/` directory
+- Skips existing hooks by default (use `--force` to overwrite)
+- Shows summary of applied/skipped/failed hooks
+
+**Note**: Requires internet connection to download hooks from GitHub.
+
+### Available Templates
+
+**dotnet** - For .NET projects
+- Source: `https://github.com/kubis1982/GitFlow/raw/main/docs/hooks/dotnet.zip`
+- Target: `.git/hooks/gitflow-*-start-post.cs`
+- Updates version in Directory.Build.props
+
+**nodejs** - For Node.js/npm projects
+- Source: `https://github.com/kubis1982/GitFlow/raw/main/docs/hooks/nodejs.zip`
+- Target: `.git/hooks/gitflow-*-start-post.cs`
+- Updates version in package.json
+
+**Note**: Both templates install hooks with the same filenames (`gitflow-release-start-post.cs` and `gitflow-hotfix-start-post.cs`) but with different implementations. Choose the template that matches your project type.
 
 ### Manual Installation
 
-1. Create the `.git/hooks/` directory if it doesn't exist
-2. Copy hook scripts from `docs/hooks/` to `.git/hooks/`
+1. Download the ZIP file for your project type from GitHub
+2. Extract files to `.git/hooks/` directory
 3. Customize the hooks for your project needs
 
 ## Requirements

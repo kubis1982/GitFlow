@@ -357,25 +357,30 @@ cp docs/hooks/gitflow-hotfix-start-post.cs .git/hooks/
 
 ### Installing Hooks
 
-To install pre-built hook templates, use the `hooks register` command:
+To install pre-built hook templates, use the `hooks apply` command:
 
 ```bash
-# Register hooks for .NET projects (updates Directory.Build.props)
-gitflow hooks register dotnet
+# Apply hooks for .NET projects (updates Directory.Build.props)
+gitflow hooks apply dotnet
 
-# Register hooks for Node.js/npm projects (updates package.json)
-gitflow hooks register nodejs
+# Apply hooks for Node.js/npm projects (updates package.json)
+gitflow hooks apply nodejs
+
+# Force overwrite existing hooks
+gitflow hooks apply dotnet --force
 ```
 
 This command:
-- Copies hook files from `docs/hooks/{template}/` to `.git/hooks/`
-- Validates each hook (must contain "version" marker)
-- Skips existing hooks (won't overwrite)
-- Shows summary of registered/skipped/failed hooks
+- Downloads the latest hook templates from GitHub
+- Extracts hooks to `.git/hooks/` directory
+- Skips existing hooks by default (use `--force` to overwrite)
+- Shows summary of applied/skipped/failed hooks
 
 **Available Templates:**
 - `dotnet` - Installs hooks for .NET projects (updates version in Directory.Build.props)
 - `nodejs` - Installs hooks for Node.js/npm projects (updates version in package.json)
+
+**Note**: Requires internet connection to download hooks from GitHub.
 
 For complete hook documentation and examples, see [docs/hooks/README.md](docs/hooks/README.md).
 

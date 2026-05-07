@@ -8,13 +8,13 @@ internal class HooksCommand : Command
 {
     public HooksCommand() : base("hooks", "Manage GitFlow hooks")
     {
-        Add(new HooksRegisterCommand());
+        Add(new HooksApplyCommand());
     }
 }
 
-internal class HooksRegisterCommand : Command
+internal class HooksApplyCommand : Command
 {
-    public HooksRegisterCommand() : base("register", "Register hooks from templates")
+    public HooksApplyCommand() : base("apply", "Apply hook templates in .git/hooks directory")
     {
         var templateArgument = new Argument<string>("template") 
         { 
@@ -22,9 +22,16 @@ internal class HooksRegisterCommand : Command
         };
         Add(templateArgument);
 
+        var forceOption = new Option<bool>("-f", "--force")
+        {
+            Description = "Overwrite existing hooks"
+        };
+        Add(forceOption);
+
         SetAction(ctx =>
         {
             var template = ctx.GetValue(templateArgument)!;
+            var force = ctx.GetValue(forceOption);
             
             try
             {
@@ -36,14 +43,14 @@ internal class HooksRegisterCommand : Command
                     return;
                 }
 
-                // Register the template hooks
-                var result = HookService.RegisterTemplate(repo, template);
+                // Apply the template hooks
+                var result = HookService.RegisterTemplate(repo, template, force);
                 
                 // Show summary
                 Console.WriteLine();
                 if (result.Copied > 0)
                 {
-                    ConsoleHelper.PrintSuccess($"✓ {result.Copied} hook(s) registered successfully");
+                    ConsoleHelper.PrintSuccess($"✓ {result.Copied} hook(s) applied successfully");
                 }
                 
                 if (result.Skipped > 0)
@@ -53,12 +60,12 @@ internal class HooksRegisterCommand : Command
                 
                 if (result.Failed > 0)
                 {
-                    ConsoleHelper.PrintError($"✗ {result.Failed} hook(s) failed validation");
+                    ConsoleHelper.PrintError($"✗ {result.Failed} hook(s) failed");
                 }
             }
             catch (Exception ex)
             {
-                ConsoleHelper.PrintError($"Error registering hooks: {ex.Message}");
+                ConsoleHelper.PrintError($"Error applying hooks: {ex.Message}");
             }
         });
     }
