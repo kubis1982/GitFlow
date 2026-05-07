@@ -45,6 +45,16 @@ dotnet .git/hooks/[hookname].cs [branch-name]
 - **stdout** - Displayed to user
 - **stderr** - Displayed to user as error
 
+### Automatic Commit
+**POST hooks only**: After a successful POST hook execution, GitFlow automatically commits any file changes made by the hook. You don't need to manually run git commands in your hook.
+
+Commit message format: `chore: apply {hookname} changes for {branchname}`
+
+Example:
+```
+chore: apply gitflow-release-start-post.cs changes for release/1.0.0
+```
+
 ## Installation
 
 1. Create the `.git/hooks/` directory if it doesn't exist
@@ -64,7 +74,7 @@ cp docs/hooks/gitflow-hotfix-start-post.cs .git/hooks/
 
 The provided example hooks automatically update the `<Version>` tag in `Directory.Build.props` when creating release or hotfix branches.
 
-**Note**: Release and hotfix hooks are provided as examples in `docs/hooks/`. Feature and bugfix hooks follow the same pattern but are not included as examples since version updates are typically not needed for these branch types.
+**Note**: Release and hotfix hooks are provided as examples in `docs/hooks/`. Feature and bugfix hooks follow the same pattern but are not included as examples since version updates are typically not needed for these branch types. All file changes made by POST hooks are automatically committed by GitFlow.
 
 **gitflow-release-start-post.cs**:
 ```csharp
@@ -89,6 +99,7 @@ var updated = System.Text.RegularExpressions.Regex.Replace(
 
 File.WriteAllText(propsFile, updated);
 Console.WriteLine($"✓ Successfully updated version to {version}");
+// Note: No need to commit - GitFlow will automatically commit POST hook changes
 return 0;
 ```
 

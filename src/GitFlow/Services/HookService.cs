@@ -98,4 +98,36 @@ public static class HookService
 
         return result;
     }
+
+    /// <summary>
+    /// Commits any changes made by a hook
+    /// </summary>
+    /// <param name="repo">Git repository</param>
+    /// <param name="hookName">Hook name for commit message</param>
+    /// <param name="branchName">Branch name for commit message</param>
+    public static void CommitHookChanges(Repository repo, string hookName, string branchName)
+    {
+        // Check if there are any uncommitted changes
+        var status = repo.RetrieveStatus();
+        var hasChanges = status.IsDirty;
+
+        if (!hasChanges)
+        {
+            // No changes to commit
+            return;
+        }
+
+        ConsoleHelper.PrintInfo("Hook made changes, committing...");
+
+        // Stage all changes
+        LibGit2Sharp.Commands.Stage(repo, "*");
+
+        // Create commit
+        var signature = new Signature("GitFlow", "gitflow@local", DateTimeOffset.Now);
+        var message = $"chore: apply {hookName} changes for {branchName}";
+        
+        repo.Commit(message, signature, signature);
+        
+        ConsoleHelper.PrintSuccess($"Committed hook changes: {message}");
+    }
 }

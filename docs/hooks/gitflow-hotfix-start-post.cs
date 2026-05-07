@@ -40,6 +40,7 @@ try
 
     File.WriteAllText(propsFile, updated);
     Console.WriteLine($"✓ Successfully updated version to {version}");
+    // Note: GitFlow will automatically commit these changes
     return 0;
 }
 catch (Exception ex)

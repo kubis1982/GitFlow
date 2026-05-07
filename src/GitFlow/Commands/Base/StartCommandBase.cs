@@ -64,6 +64,12 @@ internal abstract class StartCommandBase : Command
                         ConsoleHelper.PrintError($"Post-hook failed. Branch '{branchName}' was created but post-hook returned an error.");
                         return;
                     }
+
+                    // Commit any changes made by the post-hook
+                    if (postResult is { Success: true })
+                    {
+                        HookService.CommitHookChanges(repo, postHookName, branchName);
+                    }
                 }
 
                 ConsoleHelper.PrintSuccess($"{char.ToUpper(branchType[0]) + branchType.Substring(1)} branch '{branchName}' created");

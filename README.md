@@ -365,6 +365,7 @@ return 0;
 
 - **Parameters**: Hooks receive the full branch name (e.g., `release/1.0.0`)
 - **Exit codes**: Return 0 for success, non-zero to abort operation
+- **Auto-commit**: POST hooks' file changes are automatically committed by GitFlow
 - **Optional**: Hooks are optional - GitFlow works without them
 - **Per-repository**: Hooks are stored in `.git/hooks/` and not committed to version control
 
