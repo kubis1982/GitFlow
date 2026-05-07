@@ -117,17 +117,17 @@ public static class HookService
             return;
         }
 
-        ConsoleHelper.PrintInfo("Hook made changes, committing...");
+        ConsoleHelper.PrintInfo("Committing hook changes...");
 
         // Stage all changes
         LibGit2Sharp.Commands.Stage(repo, "*");
 
         // Create commit
         var signature = new Signature("GitFlow", "gitflow@local", DateTimeOffset.Now);
-        var message = $"chore: apply {hookName} changes for {branchName}";
+        var message = $"Update files for {branchName}";
         
         repo.Commit(message, signature, signature);
         
-        ConsoleHelper.PrintSuccess($"Committed hook changes: {message}");
+        ConsoleHelper.PrintSuccess("Changes committed");
     }
 }
