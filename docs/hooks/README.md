@@ -48,6 +48,39 @@ dotnet .git/hooks/[hookname].cs [branch-name]
 ### Automatic Commit
 **POST hooks only**: After a successful POST hook execution, GitFlow automatically commits any file changes made by the hook. You don't need to manually run git commands in your hook.
 
+## Installing Hook Templates
+
+GitFlow provides pre-built hook templates that can be installed with a single command:
+
+```bash
+# For .NET projects (updates Directory.Build.props)
+gitflow hooks register dotnet
+
+# For Node.js/npm projects (updates package.json)
+gitflow hooks register nodejs
+```
+
+This command:
+- Copies hook templates from `docs/hooks/{template}/` to `.git/hooks/`
+- Validates each hook (must contain "version" marker)
+- Skips existing hooks (won't overwrite)
+- Shows summary of registered/skipped/failed hooks
+
+### Available Templates
+
+**dotnet** - For .NET projects
+- Source: `docs/hooks/dotnet/`
+- Target: `.git/hooks/gitflow-*-start-post.cs`
+- Updates version in Directory.Build.props
+
+**nodejs** - For Node.js/npm projects
+- Source: `docs/hooks/nodejs/`
+- Target: `.git/hooks/gitflow-*-start-post.cs`
+- Updates version in package.json
+
+**Note**: Both templates install hooks with the same filenames (`gitflow-release-start-post.cs` and `gitflow-hotfix-start-post.cs`) but with different implementations. Choose the template that matches your project type.
+
+
 Commit message format: `chore: apply {hookname} changes for {branchname}`
 
 Example:
@@ -57,22 +90,32 @@ chore: apply gitflow-release-start-post.cs changes for release/1.0.0
 
 ## Installation
 
+### Using Templates (Recommended)
+
+Use the `gitflow hooks register` command to automatically install hook templates:
+
+```bash
+# For .NET projects
+gitflow hooks register dotnet
+
+# For Node.js/npm projects
+gitflow hooks register nodejs
+```
+
+This command copies the appropriate hook files from `docs/hooks/{template}/` to `.git/hooks/` with the correct names.
+
+### Manual Installation
+
 1. Create the `.git/hooks/` directory if it doesn't exist
 2. Copy hook scripts from `docs/hooks/` to `.git/hooks/`
+3. Rename files to match the expected hook names:
+   - `gitflow-*-dotnet.cs` → `gitflow-*.cs` (for .NET projects)
+   - `gitflow-*-nodejs.cs` → `gitflow-*.cs` (for Node.js projects)
 3. Customize the hooks for your project needs
-
-Example:
-```bash
-# Copy release post-hook
-cp docs/hooks/gitflow-release-start-post.cs .git/hooks/
-
-# Copy hotfix post-hook
-cp docs/hooks/gitflow-hotfix-start-post.cs .git/hooks/
-```
 
 ## Example: Update Version in Directory.Build.props
 
-The provided example hooks automatically update the `<Version>` tag in `Directory.Build.props` when creating release or hotfix branches.
+The provided hooks automatically update the `<Version>` tag in `Directory.Build.props` when creating release or hotfix branches.
 
 **Note**: Release and hotfix hooks are provided as examples in `docs/hooks/`. Feature and bugfix hooks follow the same pattern but are not included as examples since version updates are typically not needed for these branch types. All file changes made by POST hooks are automatically committed by GitFlow.
 
@@ -100,6 +143,40 @@ var updated = System.Text.RegularExpressions.Regex.Replace(
 File.WriteAllText(propsFile, updated);
 Console.WriteLine($"✓ Successfully updated version to {version}");
 // Note: No need to commit - GitFlow will automatically commit POST hook changes
+return 0;
+```
+
+## Example: Update Version in package.json
+
+For Node.js/npm projects, hooks can update the `version` field in `package.json`:
+
+**gitflow-release-start-post-packagejson.cs**:
+```csharp
+#!/usr/bin/env dotnet
+
+using System.Text.Json;
+using System.Text.Json.Nodes;
+
+var branchName = args[0]; // e.g., "release/1.0.0"
+var version = branchName.Substring(branchName.LastIndexOf('/') + 1); // "1.0.0"
+
+var packageFile = "package.json";
+if (!File.Exists(packageFile))
+{
+    Console.Error.WriteLine($"Error: {packageFile} not found");
+    return 1;
+}
+
+var jsonText = File.ReadAllText(packageFile);
+var jsonNode = JsonNode.Parse(jsonText);
+jsonNode["version"] = version;
+
+var options = new JsonSerializerOptions { WriteIndented = true };
+var updatedJson = jsonNode.ToJsonString(options);
+File.WriteAllText(packageFile, updatedJson + Environment.NewLine);
+
+Console.WriteLine($"✓ Successfully updated version to {version}");
+// Note: GitFlow will automatically commit these changes
 return 0;
 ```
 

@@ -374,6 +374,28 @@ return 0;
 - **Optional**: Hooks are optional - GitFlow works without them
 - **Per-repository**: Hooks are stored in `.git/hooks/` and not committed to version control
 
+### Installing Hooks
+
+To install pre-built hook templates, use the `hooks register` command:
+
+```bash
+# Register hooks for .NET projects (updates Directory.Build.props)
+gitflow hooks register dotnet
+
+# Register hooks for Node.js/npm projects (updates package.json)
+gitflow hooks register nodejs
+```
+
+This command:
+- Copies hook files from `docs/hooks/{template}/` to `.git/hooks/`
+- Validates each hook (must contain "version" marker)
+- Skips existing hooks (won't overwrite)
+- Shows summary of registered/skipped/failed hooks
+
+**Available Templates:**
+- `dotnet` - Installs hooks for .NET projects (updates version in Directory.Build.props)
+- `nodejs` - Installs hooks for Node.js/npm projects (updates version in package.json)
+
 For complete hook documentation and examples, see [docs/hooks/README.md](docs/hooks/README.md).
 
 ## Requirements

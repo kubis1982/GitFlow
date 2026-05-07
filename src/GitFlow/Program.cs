@@ -19,5 +19,6 @@ rootCommand.Add(new FeatureCommand());
 rootCommand.Add(new BugfixCommand());
 rootCommand.Add(new ReleaseCommand());
 rootCommand.Add(new HotfixCommand());
+rootCommand.Add(new HooksCommand());
 
 return await CommandLineParser.Parse(rootCommand, args).InvokeAsync();
