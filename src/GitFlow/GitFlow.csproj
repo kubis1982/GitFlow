@@ -30,10 +30,6 @@
 	<ItemGroup>
 		<None Include="..\..\README.md" Pack="true" PackagePath="" />
 		<None Include="..\..\docs\icon.png" Pack="true" PackagePath=""/>
-		
-		<!-- Include hook templates in the package -->
-		<None Include="..\..\docs\hooks\**\*.cs" Pack="true" PackagePath="docs\hooks\" />
-		<None Include="..\..\docs\hooks\README.md" Pack="true" PackagePath="docs\hooks\" />
 	</ItemGroup>
 
 </Project>

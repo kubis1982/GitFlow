@@ -347,25 +347,6 @@ cp docs/hooks/gitflow-release-start-post.cs .git/hooks/
 cp docs/hooks/gitflow-hotfix-start-post.cs .git/hooks/
 ```
 
-### Example: Auto-update Version
-
-The provided example hooks automatically update `Directory.Build.props` when creating release or hotfix branches:
-
-```csharp
-#!/usr/bin/env dotnet
-var branchName = args[0]; // e.g., "release/1.0.0"
-var version = branchName.Substring(branchName.LastIndexOf('/') + 1);
-
-var content = File.ReadAllText("Directory.Build.props");
-var updated = System.Text.RegularExpressions.Regex.Replace(
-    content, 
-    @"<Version>.*?</Version>", 
-    $"<Version>{version}</Version>"
-);
-File.WriteAllText("Directory.Build.props", updated);
-return 0;
-```
-
 ### Hook Behavior
 
 - **Parameters**: Hooks receive the full branch name (e.g., `release/1.0.0`)
