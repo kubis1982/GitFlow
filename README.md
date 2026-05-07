@@ -309,6 +309,67 @@ The template simplifies initialization across multiple repositories by providing
 1. **Local** configuration (`.git/config`) - used by all GitFlow commands
 2. **Global** template (`~/.gitconfig`) - used as defaults during initialization
 
+## Hooks
+
+GitFlow supports C# hooks that can be executed at various stages of the workflow. Hooks are optional scripts that automate custom actions during GitFlow operations.
+
+### Available Hooks
+
+#### Release Hooks
+- **gitflow-release-start-pre.cs** - Executed BEFORE creating a release branch
+- **gitflow-release-start-post.cs** - Executed AFTER creating a release branch
+
+#### Hotfix Hooks
+- **gitflow-hotfix-start-pre.cs** - Executed BEFORE creating a hotfix branch
+- **gitflow-hotfix-start-post.cs** - Executed AFTER creating a hotfix branch
+
+#### Feature & Bugfix Hooks
+- **gitflow-feature-start-pre.cs** / **gitflow-feature-start-post.cs** - Feature branch hooks
+- **gitflow-bugfix-start-pre.cs** / **gitflow-bugfix-start-post.cs** - Bugfix branch hooks
+
+All hook types follow the same pattern and receive the full branch name as argument.
+
+### Hook Installation
+
+1. Create `.git/hooks/` directory if it doesn't exist
+2. Copy hook scripts from `docs/hooks/` to `.git/hooks/`
+3. Customize for your project needs
+
+Example:
+```bash
+# Copy example hooks
+cp docs/hooks/gitflow-release-start-post.cs .git/hooks/
+cp docs/hooks/gitflow-hotfix-start-post.cs .git/hooks/
+```
+
+### Example: Auto-update Version
+
+The provided example hooks automatically update `Directory.Build.props` when creating release or hotfix branches:
+
+```csharp
+#!/usr/bin/env dotnet
+var branchName = args[0]; // e.g., "release/1.0.0"
+var version = branchName.Substring(branchName.LastIndexOf('/') + 1);
+
+var content = File.ReadAllText("Directory.Build.props");
+var updated = System.Text.RegularExpressions.Regex.Replace(
+    content, 
+    @"<Version>.*?</Version>", 
+    $"<Version>{version}</Version>"
+);
+File.WriteAllText("Directory.Build.props", updated);
+return 0;
+```
+
+### Hook Behavior
+
+- **Parameters**: Hooks receive the full branch name (e.g., `release/1.0.0`)
+- **Exit codes**: Return 0 for success, non-zero to abort operation
+- **Optional**: Hooks are optional - GitFlow works without them
+- **Per-repository**: Hooks are stored in `.git/hooks/` and not committed to version control
+
+For complete hook documentation and examples, see [docs/hooks/README.md](docs/hooks/README.md).
+
 ## Requirements
 
 - .NET 10.0
