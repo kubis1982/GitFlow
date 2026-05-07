@@ -408,6 +408,8 @@ Triggered by push to `develop` branch or manually:
 
 Version format: `2.0.0-dev.20260507163000+a1b2c3d`
 
+**Note**: NuGet ignores build metadata (part after `+`) in package file names. The package file will be named `Kubis1982.GitFlow.2.0.0-dev.20260507163000.nupkg`, but the metadata inside contains the full version with `+sha`.
+
 Install prerelease:
 ```bash
 dotnet tool install --global Kubis1982.GitFlow --version 2.0.0-dev.*

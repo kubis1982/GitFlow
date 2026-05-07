@@ -29,8 +29,13 @@ jobs:
           $shortSha = git rev-parse --short HEAD
           $prereleaseVersion = "$baseVersion-dev.$timestamp+$shortSha"
           
+          # NuGet ignores build metadata (+sha) in file names
+          $fileVersion = "$baseVersion-dev.$timestamp"
+          
           Write-Output "version=$prereleaseVersion" >> $env:GITHUB_OUTPUT
+          Write-Output "file_version=$fileVersion" >> $env:GITHUB_OUTPUT
           Write-Host "Prerelease version: $prereleaseVersion"
+          Write-Host "File version (without +sha): $fileVersion"
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
@@ -59,15 +64,22 @@ jobs:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
         run: |
           $version = '${{ steps.get_version.outputs.version }}'
-          $packageFile = "./artifacts/nuget/Kubis1982.GitFlow.$version.nupkg"
+          $fileVersion = '${{ steps.get_version.outputs.file_version }}'
+          
+          # NuGet ignores build metadata (+sha) in file names
+          $packageFile = "./artifacts/nuget/Kubis1982.GitFlow.$fileVersion.nupkg"
+          
           if (Test-Path $packageFile -PathType Leaf) {
             Write-Host "Pushing prerelease NuGet package to nuget.org: $packageFile"
+            Write-Host "Package version: $version (file: $fileVersion)"
             dotnet nuget push $packageFile `
               --api-key $env:NUGET_API_KEY `
               --source https://api.nuget.org/v3/index.json `
               --skip-duplicate
           } else {
             Write-Error "NuGet package file not found: $packageFile"
+            Write-Host "Listing artifacts/nuget directory:"
+            Get-ChildItem ./artifacts/nuget -Recurse | Format-Table Name, Length, LastWriteTime
             exit 1
           }
 
