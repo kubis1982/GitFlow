@@ -84,6 +84,7 @@ public static class HookService
 
                 // Copy hook files to .git/hooks
                 var extractedFiles = Directory.GetFiles(tempDir, "*.cs", SearchOption.AllDirectories);
+                var overwrittenFiles = new List<string>();
                 
                 foreach (var sourceFile in extractedFiles)
                 {
@@ -101,14 +102,52 @@ public static class HookService
                     // Copy file
                     try
                     {
+                        var wasOverwritten = File.Exists(targetFile);
                         File.Copy(sourceFile, targetFile, overwrite: overwrite);
                         ConsoleHelper.PrintSuccess($"✓ {fileName}: applied");
                         result.Copied++;
+                        
+                        // Track overwritten files for cleanup
+                        if (wasOverwritten)
+                        {
+                            overwrittenFiles.Add(targetFile);
+                        }
                     }
                     catch (Exception ex)
                     {
                         ConsoleHelper.PrintError($"✗ {fileName}: failed to copy ({ex.Message})");
                         result.Failed++;
+                    }
+                }
+                
+                // Clean dotnet compilation cache for overwritten files
+                if (overwrittenFiles.Count > 0)
+                {
+                    ConsoleHelper.PrintInfo($"Cleaning compilation cache for {overwrittenFiles.Count} overwritten hook(s)...");
+                    foreach (var hookFile in overwrittenFiles)
+                    {
+                        try
+                        {
+                            var process = new Process
+                            {
+                                StartInfo = new ProcessStartInfo
+                                {
+                                    FileName = "dotnet",
+                                    Arguments = $"clean \"{hookFile}\"",
+                                    UseShellExecute = false,
+                                    CreateNoWindow = true,
+                                    RedirectStandardOutput = true,
+                                    RedirectStandardError = true
+                                }
+                            };
+
+                            process.Start();
+                            process.WaitForExit(5000); // 5 second timeout
+                        }
+                        catch
+                        {
+                            // Ignore cleanup errors - not critical
+                        }
                     }
                 }
             }
