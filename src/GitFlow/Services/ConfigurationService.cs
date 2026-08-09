@@ -1,5 +1,6 @@
 using LibGit2Sharp;
 using GitFlow.Models;
+using System.Diagnostics;
 
 namespace GitFlow.Services;
 
@@ -62,14 +63,13 @@ public static class ConfigurationService
     {
         try
         {
-            var repo = GitRepositoryService.GetRepository();
-            
             if (global)
             {
-                WriteConfig(repo, config, ConfigurationLevel.Global);
+                WriteGlobalConfig(config);
             }
             else
             {
+                var repo = GitRepositoryService.GetRepository();
                 WriteConfig(repo, config, ConfigurationLevel.Local);
             }
         }
@@ -95,5 +95,65 @@ public static class ConfigurationService
             repo.Config.Set("gitflow.prefix.version", config.VersionPrefix, configurationLevel);
             
         repo.Config.Set("gitflow.merge.strategy", config.MergeStrategy, configurationLevel);
+    }
+
+    private static void WriteGlobalConfig(GitFlowConfig config)
+    {
+        SetGlobalConfigValue("gitflow.production", config.ProductionBranch);
+        SetGlobalConfigValue("gitflow.development", config.DevelopmentBranch);
+        SetGlobalConfigValue("gitflow.prefix.feature", config.FeaturePrefix);
+        SetGlobalConfigValue("gitflow.prefix.release", config.ReleasePrefix);
+        SetGlobalConfigValue("gitflow.prefix.hotfix", config.HotfixPrefix);
+        SetGlobalConfigValue("gitflow.prefix.bugfix", config.BugfixPrefix);
+
+        if (string.IsNullOrEmpty(config.VersionPrefix))
+            UnsetGlobalConfigValue("gitflow.prefix.version");
+        else
+            SetGlobalConfigValue("gitflow.prefix.version", config.VersionPrefix);
+
+        SetGlobalConfigValue("gitflow.merge.strategy", config.MergeStrategy);
+    }
+
+    private static void SetGlobalConfigValue(string key, string value)
+    {
+        var result = RunGitCommand("config", "--global", key, value);
+        if (result.ExitCode != 0)
+            throw new InvalidOperationException($"Failed to set global Git config '{key}': {result.Error}");
+    }
+
+    private static void UnsetGlobalConfigValue(string key)
+    {
+        var result = RunGitCommand("config", "--global", "--unset", key);
+
+        // Missing key should not fail template configuration.
+        if (result.ExitCode != 0 &&
+            !result.Error.Contains("No such section or key", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException($"Failed to unset global Git config '{key}': {result.Error}");
+        }
+    }
+
+    private static (int ExitCode, string Error) RunGitCommand(params string[] arguments)
+    {
+        using var process = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = "git",
+                RedirectStandardError = true,
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            }
+        };
+
+        foreach (var argument in arguments)
+            process.StartInfo.ArgumentList.Add(argument);
+
+        process.Start();
+        var error = process.StandardError.ReadToEnd();
+        process.WaitForExit();
+
+        return (process.ExitCode, error.Trim());
     }
 }
