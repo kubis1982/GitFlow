@@ -13,6 +13,18 @@ internal class ConfigCommand : Command
         Add(new TemplateCommand());
     }
 
+    private static void PrintConfigDetails(GitFlowConfig config)
+    {
+        Console.WriteLine($"  Production branch: {config.ProductionBranch}");
+        Console.WriteLine($"  Development branch: {config.DevelopmentBranch}");
+        Console.WriteLine($"  Feature prefix: {config.FeaturePrefix}");
+        Console.WriteLine($"  Release prefix: {config.ReleasePrefix}");
+        Console.WriteLine($"  Hotfix prefix: {config.HotfixPrefix}");
+        Console.WriteLine($"  Bugfix prefix: {config.BugfixPrefix}");
+        Console.WriteLine($"  Version prefix: {(string.IsNullOrEmpty(config.VersionPrefix) ? "<none>" : config.VersionPrefix)}");
+        Console.WriteLine($"  Merge strategy: {config.MergeStrategy}");
+    }
+
     private static GitFlowConfig PromptForConfiguration(GitFlowConfig defaults, bool isGlobal = false)
     {
         Console.WriteLine();
@@ -164,14 +176,7 @@ internal class ConfigCommand : Command
                         Console.WriteLine();
                         ConsoleHelper.PrintInfo("GitFlow Configuration (from global template)");
                         Console.WriteLine();
-                        Console.WriteLine($"  Production branch: {globalConfig.ProductionBranch}");
-                        Console.WriteLine($"  Development branch: {globalConfig.DevelopmentBranch}");
-                        Console.WriteLine($"  Feature prefix: {globalConfig.FeaturePrefix}");
-                        Console.WriteLine($"  Release prefix: {globalConfig.ReleasePrefix}");
-                        Console.WriteLine($"  Hotfix prefix: {globalConfig.HotfixPrefix}");
-                        Console.WriteLine($"  Bugfix prefix: {globalConfig.BugfixPrefix}");
-                        Console.WriteLine($"  Version prefix: {(string.IsNullOrEmpty(globalConfig.VersionPrefix) ? "<none>" : globalConfig.VersionPrefix)}");
-                        Console.WriteLine($"  Merge strategy: {globalConfig.MergeStrategy}");
+                        PrintConfigDetails(globalConfig);
                         Console.WriteLine();
                         Console.Write("Accept this configuration? (Y/n): ");
                         var response = Console.ReadLine();
@@ -217,14 +222,7 @@ internal class ConfigCommand : Command
 
                     Console.WriteLine();
                     ConsoleHelper.PrintSuccess("GitFlow initialized (local config)");
-                    Console.WriteLine($"  Production branch: {config.ProductionBranch}");
-                    Console.WriteLine($"  Development branch: {config.DevelopmentBranch}");
-                    Console.WriteLine($"  Feature prefix: {config.FeaturePrefix}");
-                    Console.WriteLine($"  Release prefix: {config.ReleasePrefix}");
-                    Console.WriteLine($"  Hotfix prefix: {config.HotfixPrefix}");
-                    Console.WriteLine($"  Bugfix prefix: {config.BugfixPrefix}");
-                    Console.WriteLine($"  Version prefix: {(string.IsNullOrEmpty(config.VersionPrefix) ? "<none>" : config.VersionPrefix)}");
-                    Console.WriteLine($"  Merge strategy: {config.MergeStrategy}");
+                    PrintConfigDetails(config);
                 }
                 catch (Exception ex)
                 {
@@ -267,14 +265,7 @@ internal class ConfigCommand : Command
 
                     Console.WriteLine();
                     ConsoleHelper.PrintSuccess("Global GitFlow template configured successfully");
-                    Console.WriteLine($"  Production branch: {config.ProductionBranch}");
-                    Console.WriteLine($"  Development branch: {config.DevelopmentBranch}");
-                    Console.WriteLine($"  Feature prefix: {config.FeaturePrefix}");
-                    Console.WriteLine($"  Release prefix: {config.ReleasePrefix}");
-                    Console.WriteLine($"  Hotfix prefix: {config.HotfixPrefix}");
-                    Console.WriteLine($"  Bugfix prefix: {config.BugfixPrefix}");
-                    Console.WriteLine($"  Version prefix: {(string.IsNullOrEmpty(config.VersionPrefix) ? "<none>" : config.VersionPrefix)}");
-                    Console.WriteLine($"  Merge strategy: {config.MergeStrategy}");
+                    PrintConfigDetails(config);
                 }
                 catch (Exception ex)
                 {
