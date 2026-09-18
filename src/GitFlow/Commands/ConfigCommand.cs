@@ -24,6 +24,7 @@ internal class ConfigCommand : Command
         Console.WriteLine($"  Bugfix prefix: {config.BugfixPrefix}");
         Console.WriteLine($"  Version prefix: {(string.IsNullOrEmpty(config.VersionPrefix) ? "<none>" : config.VersionPrefix)}");
         Console.WriteLine($"  Merge strategy: {config.MergeStrategy}");
+        Console.WriteLine($"  Hook commit message: {config.HookCommitMessageTemplate}");
     }
 
     private static GitFlowConfig PromptForConfiguration(GitFlowConfig defaults, bool isGlobal = false)
@@ -122,6 +123,19 @@ internal class ConfigCommand : Command
             _ => "--no-ff",
         };
 
+        Console.WriteLine();
+        ConsoleHelper.PrintInfo("Hook Commit Message");
+        Console.WriteLine();
+
+        // Hook commit message template (used when a start-post hook changes files, e.g. bumping a version)
+        Console.WriteLine("Message used to commit changes made by a 'start-post' hook (e.g. version bump).");
+        Console.WriteLine("Placeholders: {type} (release/hotfix/feature/bugfix), {branch} (full branch name), {version} (name after prefix).");
+        Console.Write($"Commit message template [{defaults.HookCommitMessageTemplate}]: ");
+        var hookCommitMessageInput = Console.ReadLine();
+        var hookCommitMessageTemplate = string.IsNullOrWhiteSpace(hookCommitMessageInput)
+            ? defaults.HookCommitMessageTemplate
+            : hookCommitMessageInput;
+
         return new GitFlowConfig
         {
             ProductionBranch = production,
@@ -132,6 +146,7 @@ internal class ConfigCommand : Command
             BugfixPrefix = bugfixPrefix,
             VersionPrefix = versionPrefix,
             MergeStrategy = mergeStrategy,
+            HookCommitMessageTemplate = hookCommitMessageTemplate,
             IsGlobal = isGlobal
         };
     }
@@ -195,6 +210,7 @@ internal class ConfigCommand : Command
                                 BugfixPrefix = globalConfig.BugfixPrefix,
                                 VersionPrefix = globalConfig.VersionPrefix,
                                 MergeStrategy = globalConfig.MergeStrategy,
+                                HookCommitMessageTemplate = globalConfig.HookCommitMessageTemplate,
                                 IsGlobal = false
                             };
                         }

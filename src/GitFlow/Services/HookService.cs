@@ -274,7 +274,9 @@ public static class HookService
     /// <param name="repo">Git repository</param>
     /// <param name="hookName">Hook name for commit message</param>
     /// <param name="branchName">Branch name for commit message</param>
-    public static void CommitHookChanges(Repository repo, string hookName, string branchName)
+    /// <param name="config">GitFlow configuration, providing the commit message template</param>
+    /// <param name="branchType">Branch type (release/hotfix/feature/bugfix) substituted into the template</param>
+    public static void CommitHookChanges(Repository repo, string hookName, string branchName, GitFlowConfig config, string branchType)
     {
         // Check if there are any uncommitted changes
         var status = repo.RetrieveStatus();
@@ -293,10 +295,14 @@ public static class HookService
 
         // Create commit
         var signature = new Signature("GitFlow", "gitflow@local", DateTimeOffset.Now);
-        var message = $"Update files for {branchName}";
-        
+        var version = branchName.Contains('/') ? branchName[(branchName.LastIndexOf('/') + 1)..] : branchName;
+        var message = config.HookCommitMessageTemplate
+            .Replace("{type}", branchType)
+            .Replace("{branch}", branchName)
+            .Replace("{version}", version);
+
         repo.Commit(message, signature, signature);
-        
+
         ConsoleHelper.PrintSuccess("Changes committed");
     }
 }
