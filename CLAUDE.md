@@ -79,4 +79,12 @@ All user-facing output goes through `Utilities/ConsoleHelper` (`PrintSuccess`/`P
 - `release.yml` triggers on `v*.*.*` tag push, packs/publishes/pushes to NuGet.org and creates a GitHub Release with a win-x64 zip.
 - `prerelease.yml` is manually dispatched and derives a prerelease version as `<Directory.Build.props version>-dev.<timestamp>+<shortSha>` without needing a tag.
 
+After `release.yml` publishes a GitHub Release with the win-x64 zip, the winget manifest (package id `Kubis1982.GitFlow`) is updated separately via [`wingetcreate`](https://github.com/microsoft/winget-create), pointing at that release's zip asset, e.g.:
+
+```bash
+wingetcreate update --submit --urls https://github.com/kubis1982/GitFlow/releases/download/v2.3.0/gitflow-win-x64-v2.3.0.zip --version 2.3.0 --token <GITHUB_TOKEN> Kubis1982.GitFlow
+```
+
+`--token` takes a GitHub personal access token (with permission to open a PR against `microsoft/winget-pkgs`) — never commit a real token to this repo or paste it into docs; pass it at invocation time only.
+
 Note `.github/copilot-instructions.md` predates the current `Commands/ConfigCommand.cs` structure (it still refers to a standalone `InitCommand.cs`; `InitCommand`/`ShowCommand`/`TemplateCommand` are now nested private classes inside `ConfigCommand`) — trust the code over that file for command layout, but its System.CommandLine usage notes and try/catch conventions are still accurate.
