@@ -11,6 +11,7 @@ internal class ConfigCommand : Command
     {
         Add(new InitCommand());
         Add(new TemplateCommand());
+        Add(new ShowCommand());
     }
 
     private static void PrintConfigDetails(GitFlowConfig config)
@@ -227,6 +228,34 @@ internal class ConfigCommand : Command
                 catch (Exception ex)
                 {
                     ConsoleHelper.PrintError($"Initialization failed: {ex.Message}");
+                }
+            });
+        }
+    }
+
+    private class ShowCommand : Command
+    {
+        public ShowCommand() : base("show", "Display local GitFlow configuration")
+        {
+            SetAction(n =>
+            {
+                try
+                {
+                    var config = ConfigurationService.ReadConfig(global: false);
+
+                    if (config == null)
+                    {
+                        ConsoleHelper.PrintError("No local GitFlow configuration found. Run 'gitflow config init' to create one.");
+                        return;
+                    }
+
+                    Console.WriteLine();
+                    ConsoleHelper.PrintInfo("Current GitFlow Configuration (local)");
+                    PrintConfigDetails(config);
+                }
+                catch (Exception ex)
+                {
+                    ConsoleHelper.PrintError($"Failed to read configuration: {ex.Message}");
                 }
             });
         }
