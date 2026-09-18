@@ -10,6 +10,7 @@ public class GitFlowConfig
     public string BugfixPrefix { get; set; } = "bugfix/";
     public string VersionPrefix { get; set; } = "v";
     public string MergeStrategy { get; set; } = "--no-ff";
+    public string HookCommitMessageTemplate { get; set; } = "chore({type}): update version files for {version}";
     public bool IsGlobal { get; set; }
 
     public bool IsInitialized => !string.IsNullOrEmpty(ProductionBranch);

@@ -48,6 +48,24 @@ dotnet .git/hooks/[hookname].cs [branch-name]
 ### Automatic Commit
 **POST hooks only**: After a successful POST hook execution, GitFlow automatically commits any file changes made by the hook. You don't need to manually run git commands in your hook.
 
+The commit message is built from a configurable template (default follows [Conventional Commits](https://www.conventionalcommits.org/)):
+
+```
+chore({type}): update version files for {version}
+```
+
+Placeholders:
+- **{type}** - branch type (`release`, `hotfix`, `feature`, `bugfix`)
+- **{branch}** - full branch name (e.g. `release/1.0.0`)
+- **{version}** - branch name after its prefix (e.g. `1.0.0`)
+
+Configure it per repository or globally:
+```bash
+git config gitflow.commit.hookmessage "chore({type}): update version files for {version}"
+git config --global gitflow.commit.hookmessage "chore({type}): update version files for {version}"
+```
+or set it interactively via `gitflow config init` / `gitflow config template`.
+
 ## Installing Hook Templates
 
 GitFlow provides pre-built hook templates that can be installed with a single command:

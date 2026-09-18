@@ -45,6 +45,7 @@ public static class ConfigurationService
                 BugfixPrefix = repo.Config.Get<string>("gitflow.prefix.bugfix", configurationLevel)?.Value ?? "bugfix/",
                 VersionPrefix = repo.Config.Get<string>("gitflow.prefix.version", configurationLevel)?.Value ?? "",
                 MergeStrategy = repo.Config.Get<string>("gitflow.merge.strategy", configurationLevel)?.Value ?? "--no-ff",
+                HookCommitMessageTemplate = repo.Config.Get<string>("gitflow.commit.hookmessage", configurationLevel)?.Value ?? "chore({type}): update version files for {version}",
                 IsGlobal = configurationLevel == ConfigurationLevel.Global
             };
         }
@@ -95,6 +96,7 @@ public static class ConfigurationService
             repo.Config.Set("gitflow.prefix.version", config.VersionPrefix, configurationLevel);
             
         repo.Config.Set("gitflow.merge.strategy", config.MergeStrategy, configurationLevel);
+        repo.Config.Set("gitflow.commit.hookmessage", config.HookCommitMessageTemplate, configurationLevel);
     }
 
     private static void WriteGlobalConfig(GitFlowConfig config)
@@ -112,6 +114,7 @@ public static class ConfigurationService
             SetGlobalConfigValue("gitflow.prefix.version", config.VersionPrefix);
 
         SetGlobalConfigValue("gitflow.merge.strategy", config.MergeStrategy);
+        SetGlobalConfigValue("gitflow.commit.hookmessage", config.HookCommitMessageTemplate);
     }
 
     private static void SetGlobalConfigValue(string key, string value)

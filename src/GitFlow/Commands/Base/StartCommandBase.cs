@@ -68,7 +68,7 @@ internal abstract class StartCommandBase : Command
                     // Commit any changes made by the post-hook
                     if (postResult is { Success: true })
                     {
-                        HookService.CommitHookChanges(repo, postHookName, branchName);
+                        HookService.CommitHookChanges(repo, postHookName, branchName, config, branchType);
                     }
                 }
 
