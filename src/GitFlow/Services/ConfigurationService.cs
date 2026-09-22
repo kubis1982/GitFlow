@@ -35,6 +35,8 @@ public static class ConfigurationService
             if (production == null || development == null)
                 return null;
 
+            var hookCommitMessageTemplate = repo.Config.Get<string>("gitflow.commit.hookmessage", configurationLevel)?.Value;
+
             return new GitFlowConfig
             {
                 ProductionBranch = production,
@@ -45,7 +47,9 @@ public static class ConfigurationService
                 BugfixPrefix = repo.Config.Get<string>("gitflow.prefix.bugfix", configurationLevel)?.Value ?? "bugfix/",
                 VersionPrefix = repo.Config.Get<string>("gitflow.prefix.version", configurationLevel)?.Value ?? "",
                 MergeStrategy = repo.Config.Get<string>("gitflow.merge.strategy", configurationLevel)?.Value ?? "--no-ff",
-                HookCommitMessageTemplate = repo.Config.Get<string>("gitflow.commit.hookmessage", configurationLevel)?.Value ?? "chore({type}): update version files for {version}",
+                HookCommitMessageTemplate = string.IsNullOrWhiteSpace(hookCommitMessageTemplate)
+                    ? "chore({type}): update version files for {version}"
+                    : hookCommitMessageTemplate,
                 IsGlobal = configurationLevel == ConfigurationLevel.Global
             };
         }
